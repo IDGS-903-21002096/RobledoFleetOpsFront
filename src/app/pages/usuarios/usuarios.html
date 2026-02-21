@@ -1,0 +1,248 @@
+<app-cabecera></app-cabecera>
+
+<!-- MISMA ESTRUCTURA QUE VEHÍCULOS -->
+<main class="min-h-screen bg-slate-50 pt-24 pb-10">
+  <div class="mx-auto w-full max-w-screen-xl px-4">
+
+    <!-- Header: título izquierda + botón derecha -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Usuarios</h1>
+        <p class="text-sm text-slate-500">Gestión de usuarios del sistema.</p>
+      </div>
+
+      <button
+        type="button"
+        class="shrink-0 inline-flex items-center gap-2
+               text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+               hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+               font-semibold rounded-full text-sm px-5 py-2.5
+               text-center leading-5 shadow transition active:scale-[0.98]"
+        (click)="onAgregarUsuario()"
+      >
+        <span class="text-base leading-none">+</span>
+        <span>Agregar usuario</span>
+      </button>
+    </div>
+
+    <!-- Controles: (izquierda vacío) + Buscador a la derecha -->
+    <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div></div>
+
+      <!-- Buscador (mismo estilo) -->
+      <form class="w-full md:max-w-md">
+        <label for="searchUsers" class="sr-only">Buscar</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+            <svg
+              class="w-4 h-4 text-slate-500"
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="2"
+                d="m21 21-3.5-3.5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
+              />
+            </svg>
+          </div>
+
+          <input
+            id="searchUsers"
+            type="search"
+            class="block w-full p-3 ps-10 bg-white border border-gray-300
+                   text-gray-900 text-sm rounded-full
+                   focus:ring-blue-500 focus:border-blue-500 shadow-sm
+                   placeholder:text-gray-400"
+            placeholder="Buscar usuario..."
+            [(ngModel)]="search"
+            name="search"
+          />
+
+          <button
+            type="button"
+            class="absolute end-2 bottom-2
+                   text-white bg-gradient-to-r from-blue-500 to-blue-700
+                   hover:from-blue-600 hover:to-blue-800
+                   focus:ring-4 focus:ring-blue-300
+                   font-medium rounded-full text-xs px-4 py-1.5
+                   shadow"
+          >
+            Buscar
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Grid de tarjetas -->
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div
+        *ngFor="let u of filteredUsers()"
+        class="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 hover:shadow-md transition cursor-pointer"
+        (click)="openDetalle(u)"
+        role="button"
+        tabindex="0"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <!-- Avatar -->
+            <div class="h-12 w-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden">
+              <img
+                *ngIf="u.avatarUrl; else initialsTpl"
+                [src]="u.avatarUrl"
+                alt="avatar"
+                class="h-full w-full object-cover"
+              />
+              <ng-template #initialsTpl>
+                <span class="font-bold text-blue-700">
+                  {{ initials(u.nombre) }}
+                </span>
+              </ng-template>
+            </div>
+
+            <!-- Name + Role -->
+            <div>
+              <h3 class="font-semibold text-gray-900 leading-tight">
+                {{ u.nombre }}
+              </h3>
+              <p class="text-sm text-gray-600">{{ u.rol }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="mt-4 text-sm">
+          <p class="text-gray-700">
+            <span class="font-semibold text-gray-700">Email:</span>
+            <span class="break-all"> {{ u.email }}</span>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+          <span class="text-xs text-gray-500">ID: {{ u.id }}</span>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                     hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                     font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
+              (click)="onEditar(u); $event.stopPropagation()"
+            >
+              Editar
+            </button>
+
+            <button
+              type="button"
+              class="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700
+                     hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300
+                     font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
+              (click)="onEliminar(u); $event.stopPropagation()"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DETALLE -->
+    <div
+      *ngIf="isDetalleOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      aria-modal="true"
+      role="dialog"
+    >
+      <!-- Backdrop -->
+      <div class="absolute inset-0 bg-black/50" (click)="closeDetalle()"></div>
+
+      <!-- Card -->
+      <div class="relative w-full max-w-xl rounded-2xl bg-white shadow-xl border border-gray-200">
+        <div class="flex items-start justify-between gap-3 p-5 border-b border-gray-200">
+          <div class="flex items-center gap-3">
+            <div class="h-12 w-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden">
+              <img
+                *ngIf="selectedUser?.avatarUrl; else initialsModalTpl"
+                [src]="selectedUser?.avatarUrl"
+                alt="avatar"
+                class="h-full w-full object-cover"
+              />
+              <ng-template #initialsModalTpl>
+                <span class="font-bold text-blue-700">
+                  {{ selectedUser ? initials(selectedUser.nombre) : 'U' }}
+                </span>
+              </ng-template>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Detalle del usuario</h3>
+              <p class="text-sm text-gray-500">{{ selectedUser?.nombre }}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="rounded-full p-2 hover:bg-gray-100 transition"
+            (click)="closeDetalle()"
+            aria-label="Cerrar"
+          >
+            <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-5 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Nombre</p>
+              <p class="font-semibold text-gray-900">{{ selectedUser?.nombre || '—' }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Rol</p>
+              <p class="font-semibold text-gray-900">{{ selectedUser?.rol || '—' }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4 md:col-span-2">
+              <p class="text-xs text-gray-500">Correo</p>
+              <p class="font-semibold text-gray-900 break-all">{{ selectedUser?.email || '—' }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">ID</p>
+              <p class="font-semibold text-gray-900">{{ selectedUser?.id ?? '—' }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Avatar</p>
+              <p class="font-semibold text-gray-900">
+                {{ selectedUser?.avatarUrl ? 'Personalizado' : 'Iniciales' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SOLO CERRAR (sin editar, ya está en la tarjeta) -->
+        <div class="flex items-center justify-end p-5 border-t border-gray-200">
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-full
+                   bg-gray-200 hover:bg-gray-300 text-gray-800
+                   text-sm font-semibold px-6 py-2.5 shadow-sm"
+            (click)="closeDetalle()"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<app-footer></app-footer>

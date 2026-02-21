@@ -1,0 +1,170 @@
+<app-cabecera></app-cabecera>
+
+<main class="min-h-screen bg-slate-50 pt-24 pb-10">
+  <div class="mx-auto w-full max-w-screen-xl px-4">
+
+    <!-- Header -->
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Detalle del vehículo</h1>
+        <p class="text-sm text-slate-500">
+          Consulta la información general de la unidad y accede a su documentación.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-full
+                 bg-gray-200 hover:bg-gray-300 text-gray-800
+                 text-sm font-semibold px-6 py-2.5 shadow-sm"
+          (click)="onRegresar()"
+        >
+          Regresar
+        </button>
+
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-full
+                 text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                 text-sm font-semibold px-6 py-2.5 shadow transition active:scale-[0.98]"
+          (click)="onEditar()"
+          [disabled]="!vehiculo"
+        >
+          Editar
+        </button>
+      </div>
+    </div>
+
+    <!-- Sin vehículo -->
+    <div *ngIf="!vehiculo" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <p class="text-sm text-gray-600">
+        No se encontró el vehículo. Verifica el ID o regresa al listado.
+      </p>
+    </div>
+
+    <!-- Contenido -->
+    <div *ngIf="vehiculo" class="grid gap-5 lg:grid-cols-3">
+
+      <!-- Columna izquierda (Resumen) -->
+      <div class="lg:col-span-1">
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-bold text-gray-900 leading-tight">
+                {{ vehiculo.nombreVehiculo }}
+              </h2>
+              <p class="text-sm text-gray-600">
+                {{ vehiculo.marca }} · {{ vehiculo.modelo }} · {{ vehiculo.anio ?? '—' }}
+              </p>
+            </div>
+
+            <span
+              class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+              [ngClass]="statusBadgeClass(vehiculo.statusVehiculo)"
+            >
+              {{ vehiculo.statusVehiculo }}
+            </span>
+          </div>
+
+          <div class="mt-5 grid grid-cols-1 gap-3 text-sm">
+            <div class="rounded-xl border border-gray-200 bg-white p-4">
+              <p class="text-xs text-gray-500">ID</p>
+              <p class="font-semibold text-gray-900">{{ vehiculo.id }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 bg-white p-4">
+              <p class="text-xs text-gray-500">Tipo de vehículo</p>
+              <p class="font-semibold text-gray-900">{{ vehiculo.tipoVehiculo }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 bg-white p-4">
+              <p class="text-xs text-gray-500">Grupo</p>
+              <p class="font-semibold text-gray-900">{{ safeText(vehiculo.grupo) }}</p>
+            </div>
+          </div>
+
+          <div class="mt-5">
+            <button
+              type="button"
+              class="w-full inline-flex items-center justify-center rounded-full
+                     text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                     hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                     text-sm font-semibold px-6 py-2.5 shadow transition active:scale-[0.98]"
+              (click)="onVerDocumentos()"
+            >
+              Ver documentación
+            </button>
+
+            <p class="mt-2 text-xs text-gray-500">
+              * Una vez registrado el vehículo, aquí se podrán cargar y administrar sus documentos.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna derecha (Expediente) -->
+      <div class="lg:col-span-2">
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+
+          <div class="mb-4">
+            <h3 class="text-base font-semibold text-gray-900">Expediente de la unidad</h3>
+            <p class="text-sm text-gray-600">Datos adicionales y de seguro.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Número de serie</p>
+              <p class="font-semibold text-gray-900">{{ safeText(vehiculo.numeroSerie) }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Placa</p>
+              <p class="font-semibold text-gray-900">{{ safeText(vehiculo.placa) }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Color</p>
+              <p class="font-semibold text-gray-900">{{ safeText(vehiculo.color) }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Inicio de estadísticas</p>
+              <p class="font-semibold text-gray-900">{{ safeText(vehiculo.inicioEstadisticas ?? '—') }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Medida de uso</p>
+              <p class="font-semibold text-gray-900">{{ safeText(vehiculo.medidaUso ?? '—') }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Medida de combustible</p>
+              <p class="font-semibold text-gray-900">{{ safeText(vehiculo.medidaCombustible ?? '—') }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Compañía de seguros</p>
+              <p class="font-semibold text-gray-900">{{ safeText(vehiculo.companiaSeguros) }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Póliza de seguro</p>
+              <p class="font-semibold text-gray-900">{{ safeText(vehiculo.polizaSeguro) }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4 md:col-span-2">
+              <p class="text-xs text-gray-500">Vigencia de póliza</p>
+              <p class="font-semibold text-gray-900">{{ formatDate(vehiculo.vigenciaPoliza) }}</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<app-footer></app-footer>

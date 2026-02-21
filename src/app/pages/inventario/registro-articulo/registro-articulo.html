@@ -1,0 +1,403 @@
+<app-cabecera></app-cabecera>
+
+<main class="min-h-screen bg-slate-50 pt-24 pb-10">
+  <div class="mx-auto w-full max-w-screen-xl px-4">
+
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Registrar artículos</h1>
+        <p class="text-sm text-slate-500">Alta de artículos al inventario (modo individual o múltiple).</p>
+      </div>
+
+      <button
+        type="button"
+        class="shrink-0 inline-flex items-center gap-2
+               bg-white border border-gray-200 text-gray-800
+               hover:bg-gray-50 focus:ring-4 focus:outline-none focus:ring-blue-200
+               font-semibold rounded-full text-sm px-5 py-2.5
+               text-center leading-5 shadow-sm transition active:scale-[0.98]"
+        (click)="onCancelar()"
+      >
+        <span class="text-sm">←</span>
+        <span>Volver a inventario</span>
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mb-4 flex items-center gap-2">
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold transition
+               border shadow-sm"
+        [ngClass]="modo === 'individual'
+          ? 'text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br border-transparent focus:ring-4 focus:ring-blue-300'
+          : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'"
+        (click)="setModo('individual')"
+      >
+        Individual
+      </button>
+
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold transition
+               border shadow-sm"
+        [ngClass]="modo === 'multiple'
+          ? 'text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br border-transparent focus:ring-4 focus:ring-blue-300'
+          : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'"
+        (click)="setModo('multiple')"
+      >
+        Múltiple
+      </button>
+    </div>
+
+    <!-- Card contenedora -->
+    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+
+      <!-- INDIVIDUAL -->
+      <div *ngIf="modo === 'individual'" class="p-6">
+        <div class="mb-4">
+          <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide">Registro individual</h2>
+          <p class="text-xs text-gray-500">Captura la información del artículo.</p>
+        </div>
+
+        <form class="space-y-4" (submit)="$event.preventDefault()">
+
+          <!-- Fila 1 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Código -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Código *</label>
+              <input
+                type="text"
+                class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                       focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
+                placeholder="Ej. H001"
+                [(ngModel)]="form.codigo"
+                name="codigo"
+              />
+              <p *ngIf="intentoGuardar && !form.codigo?.trim()" class="mt-1 text-xs text-red-600">
+                El código es obligatorio.
+              </p>
+            </div>
+
+            <!-- Nombre -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Nombre *</label>
+              <input
+                type="text"
+                class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                       focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
+                placeholder="Ej. Pistola de Pintura"
+                [(ngModel)]="form.nombre"
+                name="nombre"
+              />
+              <p *ngIf="intentoGuardar && !form.nombre?.trim()" class="mt-1 text-xs text-red-600">
+                El nombre es obligatorio.
+              </p>
+            </div>
+          </div>
+
+          <!-- Fila 2 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Modelo -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Modelo (opcional)</label>
+              <input
+                type="text"
+                class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                       focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
+                placeholder="Ej. XG-120"
+                [(ngModel)]="form.modelo"
+                name="modelo"
+              />
+            </div>
+
+            <!-- Punto de reorden -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Punto de reorden (opcional)</label>
+              <input
+                type="number"
+                min="0"
+                class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                       focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
+                placeholder="Ej. 10"
+                [(ngModel)]="form.puntoReorden"
+                name="puntoReorden"
+              />
+            </div>
+          </div>
+
+          <!-- Descripción -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Descripción (opcional)</label>
+            <textarea
+              rows="4"
+              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-2xl
+                     focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
+              placeholder="Describe el artículo..."
+              [(ngModel)]="form.descripcion"
+              name="descripcion"
+            ></textarea>
+          </div>
+
+          <!-- Grupo / Unidad -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Grupo *</label>
+              <select
+                class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                       focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                [(ngModel)]="form.grupo"
+                name="grupo"
+              >
+                <option value="">- Por seleccionar -</option>
+                <option *ngFor="let g of grupos" [value]="g">{{ g }}</option>
+              </select>
+              <p *ngIf="intentoGuardar && !form.grupo" class="mt-1 text-xs text-red-600">
+                El grupo es obligatorio.
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Unidad de medida *</label>
+              <select
+                class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                       focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                [(ngModel)]="form.unidad"
+                name="unidad"
+              >
+                <option value="">- Por seleccionar -</option>
+                <option *ngFor="let u of unidades" [value]="u">{{ u }}</option>
+              </select>
+              <p *ngIf="intentoGuardar && !form.unidad" class="mt-1 text-xs text-red-600">
+                La unidad es obligatoria.
+              </p>
+            </div>
+          </div>
+
+          <!-- Acciones -->
+          <div class="pt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              class="text-white bg-gradient-to-r from-blue-500 to-blue-700
+                     hover:from-blue-600 hover:to-blue-800
+                     focus:ring-4 focus:ring-blue-300
+                     font-semibold rounded-full text-sm px-6 py-2.5
+                     shadow transition active:scale-[0.98]"
+              (click)="guardarIndividual(false)"
+            >
+              Guardar
+            </button>
+
+            <button
+              type="button"
+              class="bg-white border border-gray-200 text-gray-800
+                     hover:bg-gray-50 focus:ring-4 focus:ring-gray-200
+                     font-semibold rounded-full text-sm px-6 py-2.5
+                     shadow-sm transition active:scale-[0.98]"
+              (click)="onCancelar()"
+            >
+              Cancelar
+            </button>
+          </div>
+
+          <!-- Mensaje -->
+          <div *ngIf="msg" class="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+            {{ msg }}
+          </div>
+        </form>
+      </div>
+
+      <!-- MÚLTIPLE -->
+      <div *ngIf="modo === 'multiple'" class="p-6">
+        <div class="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide">Registro múltiple</h2>
+            <p class="text-xs text-gray-500">
+              Agrega varias filas y guarda todo al final. (Solo UI por ahora)
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="shrink-0 inline-flex items-center gap-2
+                   text-white bg-gradient-to-r from-green-500 via-green-600 to-green-700
+                   hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-green-300
+                   font-semibold rounded-full text-sm px-5 py-2.5
+                   text-center leading-5 shadow transition active:scale-[0.98]"
+            (click)="agregarFila()"
+          >
+            <span class="text-base leading-none">+</span>
+            <span>Agregar fila</span>
+          </button>
+        </div>
+
+        <!-- Tabla -->
+        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-700">
+              <thead class="bg-gray-50 text-xs uppercase text-gray-600">
+                <tr>
+                  <th class="px-4 py-3">Código *</th>
+                  <th class="px-4 py-3">Nombre *</th>
+                  <th class="px-4 py-3">Modelo</th>
+                  <th class="px-4 py-3">P. reorden</th>
+                  <th class="px-4 py-3">Descripción</th>
+                  <th class="px-4 py-3">Grupo *</th>
+                  <th class="px-4 py-3">Unidad *</th>
+                  <th class="px-4 py-3 text-right">Acción</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngIf="rows.length === 0">
+                  <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                    Agrega una fila para comenzar.
+                  </td>
+                </tr>
+
+                <tr *ngFor="let r of rows; let i = index" class="border-t border-gray-100 hover:bg-gray-50">
+                  <td class="px-4 py-3">
+                    <input
+                      type="text"
+                      class="w-full p-2 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                             focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                      [(ngModel)]="r.codigo"
+                      [name]="'codigo_'+i"
+                      placeholder="Ej. H001"
+                    />
+                    <p *ngIf="intentoGuardarMultiple && !r.codigo?.trim()" class="mt-1 text-xs text-red-600">Requerido</p>
+                  </td>
+
+                  <td class="px-4 py-3">
+                    <input
+                      type="text"
+                      class="w-full p-2 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                             focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                      [(ngModel)]="r.nombre"
+                      [name]="'nombre_'+i"
+                      placeholder="Ej. Aceite 15W-40"
+                    />
+                    <p *ngIf="intentoGuardarMultiple && !r.nombre?.trim()" class="mt-1 text-xs text-red-600">Requerido</p>
+                  </td>
+
+                  <td class="px-4 py-3">
+                    <input
+                      type="text"
+                      class="w-full p-2 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                             focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                      [(ngModel)]="r.modelo"
+                      [name]="'modelo_'+i"
+                      placeholder="Opcional"
+                    />
+                  </td>
+
+                  <td class="px-4 py-3">
+                    <input
+                      type="number"
+                      min="0"
+                      class="w-full p-2 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                             focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                      [(ngModel)]="r.puntoReorden"
+                      [name]="'reorden_'+i"
+                      placeholder="0"
+                    />
+                  </td>
+
+                  <td class="px-4 py-3">
+                    <input
+                      type="text"
+                      class="w-full p-2 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                             focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                      [(ngModel)]="r.descripcion"
+                      [name]="'desc_'+i"
+                      placeholder="Opcional"
+                    />
+                  </td>
+
+                  <td class="px-4 py-3">
+                    <select
+                      class="w-full p-2 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                             focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                      [(ngModel)]="r.grupo"
+                      [name]="'grupo_'+i"
+                    >
+                      <option value="">- Seleccionar -</option>
+                      <option *ngFor="let g of grupos" [value]="g">{{ g }}</option>
+                    </select>
+                    <p *ngIf="intentoGuardarMultiple && !r.grupo" class="mt-1 text-xs text-red-600">Requerido</p>
+                  </td>
+
+                  <td class="px-4 py-3">
+                    <select
+                      class="w-full p-2 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                             focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                      [(ngModel)]="r.unidad"
+                      [name]="'unidad_'+i"
+                    >
+                      <option value="">- Seleccionar -</option>
+                      <option *ngFor="let u of unidades" [value]="u">{{ u }}</option>
+                    </select>
+                    <p *ngIf="intentoGuardarMultiple && !r.unidad" class="mt-1 text-xs text-red-600">Requerido</p>
+                  </td>
+
+                  <td class="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      class="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700
+                             hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300
+                             font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
+                      (click)="eliminarFila(i)"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-xs text-gray-600">
+            <span>Filas: <span class="font-semibold">{{ rows.length }}</span></span>
+            <span class="text-gray-400">Robledo FleetOps</span>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            class="text-white bg-gradient-to-r from-blue-500 to-blue-700
+                   hover:from-blue-600 hover:to-blue-800
+                   focus:ring-4 focus:ring-blue-300
+                   font-semibold rounded-full text-sm px-6 py-2.5
+                   shadow transition active:scale-[0.98]"
+            (click)="guardarMultiple()"
+          >
+            Guardar todo
+          </button>
+
+          <button
+            type="button"
+            class="bg-white border border-gray-200 text-gray-800
+                   hover:bg-gray-50 focus:ring-4 focus:ring-gray-200
+                   font-semibold rounded-full text-sm px-6 py-2.5
+                   shadow-sm transition active:scale-[0.98]"
+            (click)="onCancelar()"
+          >
+            Cancelar
+          </button>
+        </div>
+
+        <div *ngIf="msg" class="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+          {{ msg }}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<app-footer></app-footer>

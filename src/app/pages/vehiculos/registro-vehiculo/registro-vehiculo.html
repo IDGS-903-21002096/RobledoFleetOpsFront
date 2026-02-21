@@ -1,0 +1,725 @@
+<!-- CABECERA -->
+<app-cabecera></app-cabecera>
+
+<!-- CONTENIDO PRINCIPAL -->
+<main class="pt-20 min-h-screen bg-gray-50">
+  <div class="max-w-screen-xl mx-auto p-6">
+
+    <!-- Header (mismo formato que módulos) -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Registro de vehículo</h1>
+        <p class="text-gray-600">
+          Captura la información de la unidad para control de flotilla, estatus y estadísticas.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+               hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+               font-semibold rounded-full text-sm px-5 py-2.5 shadow transition active:scale-[0.98]"
+        (click)="onCancelar()"
+      >
+        Regresar
+      </button>
+    </div>
+
+    <!-- Card del formulario -->
+    <div class="rounded-2xl bg-white p-6 shadow-sm border border-gray-200">
+      <form class="space-y-6">
+
+        <!-- =========================
+             DATOS PRINCIPALES
+        ========================== -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-semibold text-gray-900">Datos principales</h2>
+            <p class="text-sm text-gray-600">Información general de la unidad.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <!-- ID (solo lectura / opcional) -->
+          <div>
+            <label class="block mb-2.5 text-sm font-medium text-gray-700">
+              ID
+            </label>
+
+            <input
+              type="text"
+              name="id"
+              [(ngModel)]="model.id"
+              placeholder="Se genera automáticamente"
+              class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none
+                     bg-gray-100 border border-gray-200 text-gray-600 placeholder:text-gray-400"
+              readonly
+            />
+
+            <p class="mt-2.5 text-xs text-gray-500">
+              Este campo es informativo (solo lectura).
+            </p>
+          </div>
+
+          <!-- Nombre del vehículo * -->
+          <div>
+            <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                'text-green-700': nombreVehiculoTouched && isValidNombreVehiculo(model.nombreVehiculo),
+                'text-red-700': nombreVehiculoTouched && !isValidNombreVehiculo(model.nombreVehiculo),
+                'text-gray-700': !nombreVehiculoTouched
+              }">
+              Nombre del vehículo *
+            </label>
+
+            <input
+              type="text"
+              name="nombreVehiculo"
+              [(ngModel)]="model.nombreVehiculo"
+              (blur)="nombreVehiculoTouched = true"
+              placeholder="Ej. Unidad 12 / Camión de reparto"
+              class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+              [ngClass]="{
+                'bg-green-50 border border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
+                  nombreVehiculoTouched && isValidNombreVehiculo(model.nombreVehiculo),
+                'bg-red-50 border border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
+                  nombreVehiculoTouched && !isValidNombreVehiculo(model.nombreVehiculo),
+                'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
+                  !nombreVehiculoTouched
+              }"
+              required
+            />
+
+            <p *ngIf="nombreVehiculoTouched && !isValidNombreVehiculo(model.nombreVehiculo)"
+              class="mt-2.5 text-sm text-red-700">
+              <span class="font-medium">Oh, snap!</span> El nombre del vehículo es obligatorio.
+            </p>
+
+            <p *ngIf="nombreVehiculoTouched && isValidNombreVehiculo(model.nombreVehiculo)"
+              class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span> Nombre válido.
+            </p>
+          </div>
+
+          <!-- Marca * -->
+          <div>
+            <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                'text-green-700': marcaTouched && isValidMarca(model.marca),
+                'text-red-700': marcaTouched && !isValidMarca(model.marca),
+                'text-gray-700': !marcaTouched
+              }">
+              Marca *
+            </label>
+
+            <input
+              type="text"
+              name="marca"
+              [(ngModel)]="model.marca"
+              (blur)="marcaTouched = true"
+              placeholder="Ej. Mercedes / Ford / Nissan"
+              class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+              [ngClass]="{
+                'bg-green-50 border border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
+                  marcaTouched && isValidMarca(model.marca),
+                'bg-red-50 border border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
+                  marcaTouched && !isValidMarca(model.marca),
+                'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
+                  !marcaTouched
+              }"
+              required
+            />
+
+            <p *ngIf="marcaTouched && !isValidMarca(model.marca)" class="mt-2.5 text-sm text-red-700">
+              <span class="font-medium">Oh, snap!</span> La marca es obligatoria.
+            </p>
+
+            <p *ngIf="marcaTouched && isValidMarca(model.marca)" class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span> Marca válida.
+            </p>
+          </div>
+
+          <!-- Modelo * -->
+          <div>
+            <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                'text-green-700': modeloTouched && isValidModelo(model.modelo),
+                'text-red-700': modeloTouched && !isValidModelo(model.modelo),
+                'text-gray-700': !modeloTouched
+              }">
+              Modelo *
+            </label>
+
+            <input
+              type="text"
+              name="modelo"
+              [(ngModel)]="model.modelo"
+              (blur)="modeloTouched = true"
+              placeholder="Ej. Sprinter / NP300 / F-150"
+              class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+              [ngClass]="{
+                'bg-green-50 border border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
+                  modeloTouched && isValidModelo(model.modelo),
+                'bg-red-50 border border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
+                  modeloTouched && !isValidModelo(model.modelo),
+                'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
+                  !modeloTouched
+              }"
+              required
+            />
+
+            <p *ngIf="modeloTouched && !isValidModelo(model.modelo)" class="mt-2.5 text-sm text-red-700">
+              <span class="font-medium">Oh, snap!</span> El modelo es obligatorio.
+            </p>
+
+            <p *ngIf="modeloTouched && isValidModelo(model.modelo)" class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span> Modelo válido.
+            </p>
+          </div>
+
+          <!-- Año * -->
+          <div>
+            <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                'text-green-700': anioTouched && isValidAnio(model.anio),
+                'text-red-700': anioTouched && !isValidAnio(model.anio),
+                'text-gray-700': !anioTouched
+              }">
+              Año *
+            </label>
+
+            <input
+              type="number"
+              name="anio"
+              [(ngModel)]="model.anio"
+              (blur)="anioTouched = true"
+              placeholder="Ej. 2022"
+              class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+              [ngClass]="{
+                'bg-green-50 border border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
+                  anioTouched && isValidAnio(model.anio),
+                'bg-red-50 border border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
+                  anioTouched && !isValidAnio(model.anio),
+                'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
+                  !anioTouched
+              }"
+              required
+            />
+
+            <p *ngIf="anioTouched && !isValidAnio(model.anio)" class="mt-2.5 text-sm text-red-700">
+              <span class="font-medium">Oh, snap!</span> Ingresa un año válido.
+            </p>
+
+            <p *ngIf="anioTouched && isValidAnio(model.anio)" class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span> Año válido.
+            </p>
+          </div>
+
+          <!-- Tipo de Vehículo * -->
+          <div>
+            <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                'text-green-700': tipoTouched && isValidTipo(model.tipoVehiculo),
+                'text-red-700': tipoTouched && !isValidTipo(model.tipoVehiculo),
+                'text-gray-700': !tipoTouched
+              }">
+              Tipo de vehículo *
+            </label>
+
+            <select
+              name="tipoVehiculo"
+              [(ngModel)]="model.tipoVehiculo"
+              (blur)="tipoTouched = true"
+              class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+              [ngClass]="{
+                'bg-green-50 border border-green-300 text-green-700 focus:ring-green-500 focus:border-green-500':
+                  tipoTouched && isValidTipo(model.tipoVehiculo),
+                'bg-red-50 border border-red-300 text-red-700 focus:ring-red-500 focus:border-red-500':
+                  tipoTouched && !isValidTipo(model.tipoVehiculo),
+                'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
+                  !tipoTouched
+              }"
+              required
+            >
+              <option value="" disabled>Selecciona un tipo</option>
+              <option *ngFor="let t of tiposVehiculo" [value]="t">{{ t }}</option>
+            </select>
+
+            <p *ngIf="tipoTouched && !isValidTipo(model.tipoVehiculo)" class="mt-2.5 text-sm text-red-700">
+              <span class="font-medium">Oh, snap!</span> Selecciona un tipo de vehículo.
+            </p>
+
+            <p *ngIf="tipoTouched && isValidTipo(model.tipoVehiculo)" class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span> Tipo seleccionado.
+            </p>
+          </div>
+
+          <!-- Status Inicial * -->
+          <div>
+            <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                'text-green-700': statusTouched && isValidStatus(model.statusInicial),
+                'text-red-700': statusTouched && !isValidStatus(model.statusInicial),
+                'text-gray-700': !statusTouched
+              }">
+              Status inicial *
+            </label>
+
+            <select
+              name="statusInicial"
+              [(ngModel)]="model.statusInicial"
+              (blur)="statusTouched = true"
+              class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+              [ngClass]="{
+                'bg-green-50 border border-green-300 text-green-700 focus:ring-green-500 focus:border-green-500':
+                  statusTouched && isValidStatus(model.statusInicial),
+                'bg-red-50 border border-red-300 text-red-700 focus:ring-red-500 focus:border-red-500':
+                  statusTouched && !isValidStatus(model.statusInicial),
+                'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
+                  !statusTouched
+              }"
+              required
+            >
+              <option value="" disabled>Selecciona un status</option>
+              <option *ngFor="let s of statusVehiculo" [value]="s">{{ s }}</option>
+            </select>
+
+            <p *ngIf="statusTouched && !isValidStatus(model.statusInicial)" class="mt-2.5 text-sm text-red-700">
+              <span class="font-medium">Oh, snap!</span> Selecciona un status inicial.
+            </p>
+
+            <p *ngIf="statusTouched && isValidStatus(model.statusInicial)" class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span> Status seleccionado.
+            </p>
+          </div>
+
+          <!-- Inicio de estadísticas * -->
+          <div>
+            <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                'text-green-700': inicioEstadisticasTouched && isValidInicioEstadisticas(model.inicioEstadisticas),
+                'text-red-700': inicioEstadisticasTouched && !isValidInicioEstadisticas(model.inicioEstadisticas),
+                'text-gray-700': !inicioEstadisticasTouched
+              }">
+              Inicio de estadísticas *
+            </label>
+
+            <select
+              name="inicioEstadisticas"
+              [(ngModel)]="model.inicioEstadisticas"
+              (blur)="inicioEstadisticasTouched = true"
+              class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+              [ngClass]="{
+                'bg-green-50 border border-green-300 text-green-700 focus:ring-green-500 focus:border-green-500':
+                  inicioEstadisticasTouched && isValidInicioEstadisticas(model.inicioEstadisticas),
+                'bg-red-50 border border-red-300 text-red-700 focus:ring-red-500 focus:border-red-500':
+                  inicioEstadisticasTouched && !isValidInicioEstadisticas(model.inicioEstadisticas),
+                'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
+                  !inicioEstadisticasTouched
+              }"
+              required
+            >
+              <option value="" disabled>Selecciona una opción</option>
+              <option value="Fecha de registro">Fecha de registro</option>
+              <option value="Fecha de compra">Fecha de compra</option>
+            </select>
+
+            <p *ngIf="inicioEstadisticasTouched && !isValidInicioEstadisticas(model.inicioEstadisticas)"
+              class="mt-2.5 text-sm text-red-700">
+              <span class="font-medium">Oh, snap!</span> Selecciona el inicio de estadísticas.
+            </p>
+
+            <p *ngIf="inicioEstadisticasTouched && isValidInicioEstadisticas(model.inicioEstadisticas)"
+              class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span> Opción seleccionada.
+            </p>
+          </div>
+
+          <!-- Medida de uso * -->
+          <div>
+            <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                'text-green-700': medidaUsoTouched && isValidMedidaUso(model.medidaUso),
+                'text-red-700': medidaUsoTouched && !isValidMedidaUso(model.medidaUso),
+                'text-gray-700': !medidaUsoTouched
+              }">
+              Medida de uso *
+            </label>
+
+            <select
+              name="medidaUso"
+              [(ngModel)]="model.medidaUso"
+              (blur)="medidaUsoTouched = true"
+              class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+              [ngClass]="{
+                'bg-green-50 border border-green-300 text-green-700 focus:ring-green-500 focus:border-green-500':
+                  medidaUsoTouched && isValidMedidaUso(model.medidaUso),
+                'bg-red-50 border border-red-300 text-red-700 focus:ring-red-500 focus:border-red-500':
+                  medidaUsoTouched && !isValidMedidaUso(model.medidaUso),
+                'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
+                  !medidaUsoTouched
+              }"
+              required
+            >
+              <option value="" disabled>Selecciona una medida</option>
+              <option value="Kilómetros">Kilómetros</option>
+              <option value="Millas">Millas</option>
+              <option value="Horas">Horas</option>
+            </select>
+
+            <p *ngIf="medidaUsoTouched && !isValidMedidaUso(model.medidaUso)" class="mt-2.5 text-sm text-red-700">
+              <span class="font-medium">Oh, snap!</span> Selecciona la medida de uso.
+            </p>
+
+            <p *ngIf="medidaUsoTouched && isValidMedidaUso(model.medidaUso)" class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span> Medida seleccionada.
+            </p>
+          </div>
+
+          <!-- Medida de combustible * -->
+          <div>
+            <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                'text-green-700': medidaCombTouched && isValidMedidaComb(model.medidaCombustible),
+                'text-red-700': medidaCombTouched && !isValidMedidaComb(model.medidaCombustible),
+                'text-gray-700': !medidaCombTouched
+              }">
+              Medida de combustible *
+            </label>
+
+            <select
+              name="medidaCombustible"
+              [(ngModel)]="model.medidaCombustible"
+              (blur)="medidaCombTouched = true"
+              class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+              [ngClass]="{
+                'bg-green-50 border border-green-300 text-green-700 focus:ring-green-500 focus:border-green-500':
+                  medidaCombTouched && isValidMedidaComb(model.medidaCombustible),
+                'bg-red-50 border border-red-300 text-red-700 focus:ring-red-500 focus:border-red-500':
+                  medidaCombTouched && !isValidMedidaComb(model.medidaCombustible),
+                'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
+                  !medidaCombTouched
+              }"
+              required
+            >
+              <option value="" disabled>Selecciona una medida</option>
+              <option value="Litros">Litros</option>
+              <option value="Galones">Galones</option>
+            </select>
+
+            <p *ngIf="medidaCombTouched && !isValidMedidaComb(model.medidaCombustible)"
+              class="mt-2.5 text-sm text-red-700">
+              <span class="font-medium">Oh, snap!</span> Selecciona la medida de combustible.
+            </p>
+
+            <p *ngIf="medidaCombTouched && isValidMedidaComb(model.medidaCombustible)"
+              class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span> Medida seleccionada.
+            </p>
+          </div>
+        </div>
+
+        <!-- =========================
+             ADICIONAL (sección grande)
+        ========================== -->
+        <div class="rounded-2xl border border-gray-200 bg-white p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-base font-semibold text-gray-900">Información adicional</h2>
+              <p class="text-sm text-gray-600">Campos opcionales para enriquecer el expediente de la unidad.</p>
+            </div>
+          </div>
+
+          <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Grupo -->
+            <div>
+              <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                  'text-green-700': grupoTouched && hasSelection(model.grupo) && isValidGrupo(model.grupo),
+                  'text-red-700': grupoTouched && hasSelection(model.grupo) && !isValidGrupo(model.grupo),
+                  'text-gray-700': !grupoTouched || (grupoTouched && !hasSelection(model.grupo))
+                }">
+                Grupo
+              </label>
+
+              <select
+                name="grupo"
+                [(ngModel)]="model.grupo"
+                (blur)="grupoTouched = true"
+                class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+                [ngClass]="{
+                  'bg-green-50 border border-green-300 text-green-700 focus:ring-green-500 focus:border-green-500':
+                    grupoTouched && hasSelection(model.grupo) && isValidGrupo(model.grupo),
+                  'bg-red-50 border border-red-300 text-red-700 focus:ring-red-500 focus:border-red-500':
+                    grupoTouched && hasSelection(model.grupo) && !isValidGrupo(model.grupo),
+                  'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
+                    !grupoTouched || (grupoTouched && !hasSelection(model.grupo))
+                }"
+              >
+                <option value="" disabled>Selecciona un grupo</option>
+                <option *ngFor="let g of gruposVehiculo" [value]="g">{{ g }}</option>
+              </select>
+
+              <p *ngIf="grupoTouched && hasSelection(model.grupo) && !isValidGrupo(model.grupo)" class="mt-2.5 text-sm text-red-700">
+                <span class="font-medium">Oh, snap!</span> Selecciona un grupo válido.
+              </p>
+
+              <p *ngIf="grupoTouched && hasSelection(model.grupo) && isValidGrupo(model.grupo)" class="mt-2.5 text-sm text-green-700">
+                <span class="font-medium">Bien hecho.</span> Grupo seleccionado.
+              </p>
+            </div>
+
+            <!-- Número de Serie -->
+            <div>
+              <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                  'text-green-700': serieTouched && hasText(model.numeroSerie) && isValidSerie(model.numeroSerie),
+                  'text-red-700': serieTouched && hasText(model.numeroSerie) && !isValidSerie(model.numeroSerie),
+                  'text-gray-700': !serieTouched || (serieTouched && !hasText(model.numeroSerie))
+                }">
+                Número de serie
+              </label>
+
+              <input
+                type="text"
+                name="numeroSerie"
+                [(ngModel)]="model.numeroSerie"
+                (blur)="serieTouched = true"
+                placeholder="Ej. 1HGCM82633A123456"
+                class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+                [ngClass]="{
+                  'bg-green-50 border border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
+                    serieTouched && hasText(model.numeroSerie) && isValidSerie(model.numeroSerie),
+                  'bg-red-50 border border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
+                    serieTouched && hasText(model.numeroSerie) && !isValidSerie(model.numeroSerie),
+                  'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
+                    !serieTouched || (serieTouched && !hasText(model.numeroSerie))
+                }"
+              />
+
+              <p *ngIf="serieTouched && hasText(model.numeroSerie) && !isValidSerie(model.numeroSerie)" class="mt-2.5 text-sm text-red-700">
+                <span class="font-medium">Oh, snap!</span> Verifica el número de serie.
+              </p>
+
+              <p *ngIf="serieTouched && hasText(model.numeroSerie) && isValidSerie(model.numeroSerie)" class="mt-2.5 text-sm text-green-700">
+                <span class="font-medium">Bien hecho.</span> Número de serie válido.
+              </p>
+            </div>
+
+            <!-- Licencia o Placa -->
+            <div>
+              <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                  'text-green-700': placaTouched && hasText(model.placa) && isValidPlaca(model.placa),
+                  'text-red-700': placaTouched && hasText(model.placa) && !isValidPlaca(model.placa),
+                  'text-gray-700': !placaTouched || (placaTouched && !hasText(model.placa))
+                }">
+                Licencia o placa
+              </label>
+
+              <input
+                type="text"
+                name="placa"
+                [(ngModel)]="model.placa"
+                (blur)="placaTouched = true"
+                placeholder="Ej. GTO-123-A"
+                class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+                [ngClass]="{
+                  'bg-green-50 border border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
+                    placaTouched && hasText(model.placa) && isValidPlaca(model.placa),
+                  'bg-red-50 border border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
+                    placaTouched && hasText(model.placa) && !isValidPlaca(model.placa),
+                  'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
+                    !placaTouched || (placaTouched && !hasText(model.placa))
+                }"
+              />
+
+              <p *ngIf="placaTouched && hasText(model.placa) && !isValidPlaca(model.placa)" class="mt-2.5 text-sm text-red-700">
+                <span class="font-medium">Oh, snap!</span> Verifica la placa.
+              </p>
+
+              <p *ngIf="placaTouched && hasText(model.placa) && isValidPlaca(model.placa)" class="mt-2.5 text-sm text-green-700">
+                <span class="font-medium">Bien hecho.</span> Placa válida.
+              </p>
+            </div>
+
+            <!-- Color -->
+            <div>
+              <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                  'text-green-700': colorTouched && hasText(model.color) && isValidColor(model.color),
+                  'text-red-700': colorTouched && hasText(model.color) && !isValidColor(model.color),
+                  'text-gray-700': !colorTouched || (colorTouched && !hasText(model.color))
+                }">
+                Color
+              </label>
+
+              <input
+                type="text"
+                name="color"
+                [(ngModel)]="model.color"
+                (blur)="colorTouched = true"
+                placeholder="Ej. Blanco / Azul"
+                class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+                [ngClass]="{
+                  'bg-green-50 border border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
+                    colorTouched && hasText(model.color) && isValidColor(model.color),
+                  'bg-red-50 border border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
+                    colorTouched && hasText(model.color) && !isValidColor(model.color),
+                  'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
+                    !colorTouched || (colorTouched && !hasText(model.color))
+                }"
+              />
+
+              <p *ngIf="colorTouched && hasText(model.color) && !isValidColor(model.color)" class="mt-2.5 text-sm text-red-700">
+                <span class="font-medium">Oh, snap!</span> Verifica el color.
+              </p>
+
+              <p *ngIf="colorTouched && hasText(model.color) && isValidColor(model.color)" class="mt-2.5 text-sm text-green-700">
+                <span class="font-medium">Bien hecho.</span> Color válido.
+              </p>
+            </div>
+
+            <!-- Compañía de Seguros -->
+            <div>
+              <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                  'text-green-700': companiaTouched && hasText(model.companiaSeguros) && isValidCompania(model.companiaSeguros),
+                  'text-red-700': companiaTouched && hasText(model.companiaSeguros) && !isValidCompania(model.companiaSeguros),
+                  'text-gray-700': !companiaTouched || (companiaTouched && !hasText(model.companiaSeguros))
+                }">
+                Compañía de seguros
+              </label>
+
+              <input
+                type="text"
+                name="companiaSeguros"
+                [(ngModel)]="model.companiaSeguros"
+                (blur)="companiaTouched = true"
+                placeholder="Ej. GNP / Qualitas / AXA"
+                class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+                [ngClass]="{
+                  'bg-green-50 border border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
+                    companiaTouched && hasText(model.companiaSeguros) && isValidCompania(model.companiaSeguros),
+                  'bg-red-50 border border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
+                    companiaTouched && hasText(model.companiaSeguros) && !isValidCompania(model.companiaSeguros),
+                  'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
+                    !companiaTouched || (companiaTouched && !hasText(model.companiaSeguros))
+                }"
+              />
+
+              <p *ngIf="companiaTouched && hasText(model.companiaSeguros) && !isValidCompania(model.companiaSeguros)"
+                class="mt-2.5 text-sm text-red-700">
+                <span class="font-medium">Oh, snap!</span> Verifica la compañía.
+              </p>
+
+              <p *ngIf="companiaTouched && hasText(model.companiaSeguros) && isValidCompania(model.companiaSeguros)"
+                class="mt-2.5 text-sm text-green-700">
+                <span class="font-medium">Bien hecho.</span> Compañía válida.
+              </p>
+            </div>
+
+            <!-- Póliza de Seguro -->
+            <div>
+              <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                  'text-green-700': polizaTouched && hasText(model.polizaSeguro) && isValidPoliza(model.polizaSeguro),
+                  'text-red-700': polizaTouched && hasText(model.polizaSeguro) && !isValidPoliza(model.polizaSeguro),
+                  'text-gray-700': !polizaTouched || (polizaTouched && !hasText(model.polizaSeguro))
+                }">
+                Póliza de seguro
+              </label>
+
+              <input
+                type="text"
+                name="polizaSeguro"
+                [(ngModel)]="model.polizaSeguro"
+                (blur)="polizaTouched = true"
+                placeholder="Ej. POL-00012345"
+                class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+                [ngClass]="{
+                  'bg-green-50 border border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
+                    polizaTouched && hasText(model.polizaSeguro) && isValidPoliza(model.polizaSeguro),
+                  'bg-red-50 border border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
+                    polizaTouched && hasText(model.polizaSeguro) && !isValidPoliza(model.polizaSeguro),
+                  'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
+                    !polizaTouched || (polizaTouched && !hasText(model.polizaSeguro))
+                }"
+              />
+
+              <p *ngIf="polizaTouched && hasText(model.polizaSeguro) && !isValidPoliza(model.polizaSeguro)" class="mt-2.5 text-sm text-red-700">
+                <span class="font-medium">Oh, snap!</span> Verifica la póliza.
+              </p>
+
+              <p *ngIf="polizaTouched && hasText(model.polizaSeguro) && isValidPoliza(model.polizaSeguro)" class="mt-2.5 text-sm text-green-700">
+                <span class="font-medium">Bien hecho.</span> Póliza válida.
+              </p>
+            </div>
+
+            <!-- Vigencia Póliza -->
+            <div>
+              <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                  'text-green-700': vigenciaTouched && hasSelection(model.vigenciaPoliza) && isValidVigencia(model.vigenciaPoliza),
+                  'text-red-700': vigenciaTouched && hasSelection(model.vigenciaPoliza) && !isValidVigencia(model.vigenciaPoliza),
+                  'text-gray-700': !vigenciaTouched || (vigenciaTouched && !hasSelection(model.vigenciaPoliza))
+                }">
+                Vigencia de póliza
+              </label>
+
+              <input
+                type="date"
+                name="vigenciaPoliza"
+                [(ngModel)]="model.vigenciaPoliza"
+                (blur)="vigenciaTouched = true"
+                class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+                [ngClass]="{
+                  'bg-green-50 border border-green-300 text-green-700 focus:ring-green-500 focus:border-green-500':
+                    vigenciaTouched && hasSelection(model.vigenciaPoliza) && isValidVigencia(model.vigenciaPoliza),
+                  'bg-red-50 border border-red-300 text-red-700 focus:ring-red-500 focus:border-red-500':
+                    vigenciaTouched && hasSelection(model.vigenciaPoliza) && !isValidVigencia(model.vigenciaPoliza),
+                  'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
+                    !vigenciaTouched || (vigenciaTouched && !hasSelection(model.vigenciaPoliza))
+                }"
+              />
+
+              <p *ngIf="vigenciaTouched && hasSelection(model.vigenciaPoliza) && !isValidVigencia(model.vigenciaPoliza)" class="mt-2.5 text-sm text-red-700">
+                <span class="font-medium">Oh, snap!</span> Verifica la vigencia.
+              </p>
+
+              <p *ngIf="vigenciaTouched && hasSelection(model.vigenciaPoliza) && isValidVigencia(model.vigenciaPoliza)" class="mt-2.5 text-sm text-green-700">
+                <span class="font-medium">Bien hecho.</span> Fecha válida.
+              </p>
+            </div>
+
+            <!-- Leyenda: Documentos (info) -->
+            <div class="flex items-end">
+              <div class="w-full rounded-2xl border border-blue-200 bg-blue-50/60 p-4">
+                <p class="text-sm font-semibold text-blue-900">Documentos</p>
+                <p class="mt-1 text-sm text-blue-800">
+                  Una vez registrado el vehículo, podrás cargar los documentos (tarjeta de circulación, póliza,
+                  verificación, etc.).
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Acciones abajo -->
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end pt-2">
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-full
+                   bg-gray-200 hover:bg-gray-300 text-gray-800
+                   text-sm font-semibold px-6 py-2.5 shadow-sm"
+            (click)="onCancelar()"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-full
+                   text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                   hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                   text-sm font-semibold px-6 py-2.5 shadow transition active:scale-[0.98]"
+            (click)="onGuardar()"
+          >
+            Guardar vehículo
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</main>
+
+<!-- FOOTER -->
+<app-footer></app-footer>

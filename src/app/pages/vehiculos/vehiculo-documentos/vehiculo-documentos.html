@@ -1,0 +1,405 @@
+<app-cabecera></app-cabecera>
+
+<main class="min-h-screen bg-slate-50 pt-24 pb-10">
+  <div class="mx-auto w-full max-w-screen-xl px-4">
+
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Documentos del vehículo</h1>
+        <p class="text-sm text-slate-500">
+          Sube y administra la documentación de la unidad.
+          <span class="text-slate-400">ID vehículo:</span>
+          <span class="font-semibold text-slate-700">{{ vehiculoId ?? '—' }}</span>
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-full
+                 bg-gray-200 hover:bg-gray-300 text-gray-800
+                 text-sm font-semibold px-6 py-2.5 shadow-sm"
+          (click)="onRegresar()"
+        >
+          Regresar
+        </button>
+
+        <button
+          type="button"
+          class="shrink-0 inline-flex items-center gap-2
+                 text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                 font-semibold rounded-full text-sm px-5 py-2.5
+                 text-center leading-5 shadow transition active:scale-[0.98]"
+          (click)="addDocumento()"
+        >
+          <span class="text-base leading-none">+</span>
+          <span>Agregar documento</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Aviso -->
+    <div class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+      <p class="text-sm text-blue-800">
+        Aquí puedes cargar cualquier cantidad de documentos (tarjeta de circulación, póliza, verificación, etc.).
+        Si falta alguno, podrás completarlo después sin afectar el registro del vehículo.
+      </p>
+    </div>
+
+    <!-- Carga -->
+    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div class="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+        <p class="text-sm font-semibold text-gray-900">Carga de documentos</p>
+        <p class="text-xs text-gray-500">
+          Total: <span class="font-semibold">{{ documentos.length }}</span>
+        </p>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="documentos.length === 0" class="rounded-2xl border border-dashed border-gray-300 p-8 text-center">
+          <p class="text-sm text-gray-600">Aún no has agregado documentos.</p>
+          <button
+            type="button"
+            class="mt-4 inline-flex items-center gap-2
+                   text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                   hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                   font-semibold rounded-full text-sm px-5 py-2.5 shadow transition active:scale-[0.98]"
+            (click)="addDocumento()"
+          >
+            <span class="text-base leading-none">+</span>
+            <span>Agregar el primero</span>
+          </button>
+        </div>
+
+        <div *ngIf="documentos.length > 0" class="space-y-4">
+          <div
+            *ngFor="let d of documentos; let i = index"
+            class="rounded-2xl border border-gray-200 bg-white p-5 hover:shadow-sm transition"
+          >
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div class="flex-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- Nombre -->
+                  <div>
+                    <label
+                      class="block mb-2 text-sm font-medium"
+                      [ngClass]="{
+                        'text-green-700': d.touchedNombre && isValidNombreDoc(d.nombre),
+                        'text-red-700': d.touchedNombre && !isValidNombreDoc(d.nombre),
+                        'text-gray-700': !d.touchedNombre
+                      }"
+                    >
+                      Nombre del documento *
+                    </label>
+
+                    <input
+                      type="text"
+                      class="block w-full p-3 bg-white border border-gray-300
+                             text-gray-900 text-sm rounded-full
+                             focus:ring-blue-500 focus:border-blue-500 shadow-sm
+                             placeholder:text-gray-400"
+                      placeholder="Ej. Tarjeta de circulación"
+                      [(ngModel)]="d.nombre"
+                      name="nombreDoc{{ i }}"
+                      (blur)="d.touchedNombre = true"
+                      [ngClass]="{
+                        'bg-green-50 border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
+                          d.touchedNombre && isValidNombreDoc(d.nombre),
+                        'bg-red-50 border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
+                          d.touchedNombre && !isValidNombreDoc(d.nombre)
+                      }"
+                    />
+
+                    <p *ngIf="d.touchedNombre && !isValidNombreDoc(d.nombre)" class="mt-2 text-sm text-red-700">
+                      <span class="font-medium">Oh, snap!</span> Escribe un nombre para el documento.
+                    </p>
+                  </div>
+
+                  <!-- Tipo -->
+                  <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Tipo</label>
+                    <select
+                      class="block w-full p-3 bg-white border border-gray-300
+                             text-gray-900 text-sm rounded-full
+                             focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                      [(ngModel)]="d.tipo"
+                      name="tipoDoc{{ i }}"
+                    >
+                      <option value="">(Opcional) Selecciona un tipo</option>
+                      <option *ngFor="let t of tiposDoc" [value]="t">{{ t }}</option>
+                    </select>
+                  </div>
+
+                  <!-- Archivo -->
+                  <div class="md:col-span-2">
+                    <label
+                      class="block mb-2 text-sm font-medium"
+                      [ngClass]="{
+                        'text-green-700': d.touchedArchivo && isValidArchivo(d),
+                        'text-red-700': d.touchedArchivo && !isValidArchivo(d),
+                        'text-gray-700': !d.touchedArchivo
+                      }"
+                    >
+                      Archivo * <span class="text-xs text-gray-400">(PDF o imagen)</span>
+                    </label>
+
+                    <div class="flex flex-col gap-3 md:flex-row md:items-center">
+                      <input
+                        type="file"
+                        accept="application/pdf,image/*"
+                        (change)="onFileChange($event, d)"
+                        (blur)="d.touchedArchivo = true"
+                        class="block w-full text-sm text-gray-900
+                               file:mr-4 file:py-2 file:px-4
+                               file:rounded-full file:border-0
+                               file:text-sm file:font-semibold
+                               file:bg-blue-50 file:text-blue-700
+                               hover:file:bg-blue-100"
+                      />
+
+                      <div class="text-xs text-gray-600">
+                        <div>
+                          <span class="font-semibold">Archivo:</span>
+                          <span>{{ d.archivo?.name || '—' }}</span>
+                        </div>
+                        <div>
+                          <span class="font-semibold">Estatus:</span>
+                          <span
+                            class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium"
+                            [ngClass]="{
+                              'bg-gray-100 text-gray-700': d.estado === 'PENDIENTE',
+                              'bg-blue-100 text-blue-700': d.estado === 'SUBIENDO',
+                              'bg-green-100 text-green-700': d.estado === 'CARGADO'
+                            }"
+                          >
+                            {{ d.estado }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p *ngIf="d.touchedArchivo && !d.archivo" class="mt-2 text-sm text-red-700">
+                      <span class="font-medium">Oh, snap!</span> Selecciona un archivo.
+                    </p>
+
+                    <p *ngIf="d.errorArchivo" class="mt-2 text-sm text-red-700">
+                      <span class="font-medium">Oh, snap!</span> {{ d.errorArchivo }}
+                    </p>
+
+                    <div *ngIf="d.estado === 'SUBIENDO'" class="mt-3">
+                      <div class="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+                        <div class="h-2 rounded-full bg-blue-600" [style.width.%]="d.progreso"></div>
+                      </div>
+                      <p class="mt-2 text-xs text-gray-500">Subiendo... {{ d.progreso }}%</p>
+                    </div>
+
+                    <div *ngIf="d.estado === 'CARGADO'" class="mt-3 text-xs text-green-700">
+                      <span class="font-semibold">Bien hecho.</span> Archivo listo.
+                    </div>
+                  </div>
+
+                  <!-- Notas -->
+                  <div class="md:col-span-2">
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Notas (opcional)</label>
+                    <input
+                      type="text"
+                      class="block w-full p-3 bg-white border border-gray-300
+                             text-gray-900 text-sm rounded-full
+                             focus:ring-blue-500 focus:border-blue-500 shadow-sm
+                             placeholder:text-gray-400"
+                      placeholder="Ej. Vigencia hasta 2026 / Entregado por proveedor"
+                      [(ngModel)]="d.notas"
+                      name="notasDoc{{ i }}"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-2 md:flex-col md:items-end">
+                <button
+                  type="button"
+                  class="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700
+                         hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300
+                         font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
+                  (click)="removeDocumento(i)"
+                >
+                  Quitar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              class="inline-flex items-center justify-center rounded-full
+                     bg-gray-200 hover:bg-gray-300 text-gray-800
+                     text-sm font-semibold px-6 py-2.5 shadow-sm"
+              (click)="onRegresar()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex items-center justify-center rounded-full
+                     text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                     hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                     text-sm font-semibold px-6 py-2.5 shadow transition active:scale-[0.98]"
+              (click)="onGuardar()"
+            >
+              Guardar documentos
+            </button>
+          </div>
+
+          <p *ngIf="submitAttempted && !isValidForm()" class="mt-3 text-sm text-red-700">
+            <span class="font-medium">Oh, snap!</span> Revisa los documentos marcados en rojo.
+          </p>
+
+          <p *ngIf="submitAttempted && isValidForm()" class="mt-3 text-sm text-green-700">
+            <span class="font-medium">Bien hecho.</span> Documentos listos para guardar.
+          </p>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 px-6 py-4 text-xs text-gray-500 flex items-center justify-between">
+        <span>Robledo FleetOps</span>
+        <span class="text-gray-400">Documentación por vehículo</span>
+      </div>
+    </div>
+
+    <!-- Historial -->
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div class="border-b border-gray-100 px-6 py-4">
+        <p class="text-sm font-semibold text-gray-900">Historial (mock)</p>
+        <p class="text-xs text-gray-500">Documentos ya guardados (con ver/descargar/eliminar).</p>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="historial.length === 0" class="text-sm text-gray-600">
+          No hay documentos previos.
+        </div>
+
+        <div *ngIf="historial.length > 0" class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-gray-700">
+            <thead class="bg-gray-50 text-xs uppercase text-gray-600">
+              <tr>
+                <th class="px-4 py-3">Documento</th>
+                <th class="px-4 py-3">Tipo</th>
+                <th class="px-4 py-3">Archivo</th>
+                <th class="px-4 py-3">Fecha</th>
+                <th class="px-4 py-3">Estatus</th>
+                <th class="px-4 py-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let h of historial" class="border-t border-gray-100 hover:bg-gray-50">
+                <td class="px-4 py-3 font-semibold text-gray-900">{{ h.nombre }}</td>
+                <td class="px-4 py-3">{{ h.tipo || '—' }}</td>
+                <td class="px-4 py-3">{{ h.archivoNombre }}</td>
+                <td class="px-4 py-3">{{ h.fecha }}</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-green-100 text-green-700">
+                    CARGADO
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center rounded-full
+                             bg-blue-50 hover:bg-blue-100 text-blue-700
+                             text-xs font-semibold px-4 py-2 shadow-sm"
+                      (click)="openPreviewHist(h)"
+                    >
+                      Ver
+                    </button>
+
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center rounded-full
+                             bg-gray-200 hover:bg-gray-300 text-gray-800
+                             text-xs font-semibold px-4 py-2 shadow-sm"
+                      (click)="downloadHist(h)"
+                    >
+                      Descargar
+                    </button>
+
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center rounded-full
+                             bg-red-50 hover:bg-red-100 text-red-700
+                             text-xs font-semibold px-4 py-2 shadow-sm"
+                      (click)="removeHistorial(h)"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Modal preview -->
+<div *ngIf="previewOpen && previewDoc" class="fixed inset-0 z-50">
+  <div class="absolute inset-0 bg-black/50" (click)="closePreview()"></div>
+
+  <div class="relative mx-auto mt-16 w-[95%] max-w-4xl rounded-2xl bg-white shadow-xl overflow-hidden">
+    <div class="flex items-start justify-between gap-3 border-b border-gray-100 px-5 py-4">
+      <div>
+        <p class="text-sm font-semibold text-gray-900">{{ previewDoc.nombre }}</p>
+        <p class="text-xs text-gray-500">{{ previewDoc.archivoNombre }}</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-full
+                 bg-gray-200 hover:bg-gray-300 text-gray-800
+                 text-xs font-semibold px-4 py-2 shadow-sm"
+          (click)="downloadPreview()"
+        >
+          Descargar
+        </button>
+
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-full
+                 bg-red-100 hover:bg-red-200 text-red-700
+                 text-xs font-semibold px-4 py-2 shadow-sm"
+          (click)="closePreview()"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+
+    <div class="p-4">
+      <div *ngIf="isPdfMime(previewDoc.mimeType)" class="rounded-2xl border border-gray-200 overflow-hidden">
+        <iframe
+          [src]="previewDoc.safeUrl"
+          class="w-full h-[70vh]"
+          title="Previsualización PDF"
+        ></iframe>
+      </div>
+
+      <div *ngIf="!isPdfMime(previewDoc.mimeType)" class="rounded-2xl border border-gray-200 overflow-hidden bg-gray-50">
+        <img [src]="previewDoc.dataUrl" alt="Previsualización" class="w-full max-h-[70vh] object-contain" />
+      </div>
+
+      <p class="mt-3 text-xs text-gray-500">
+        *Vista previa en modo prueba usando base64 (DataURL).
+      </p>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>
