@@ -3,7 +3,6 @@
 <main class="min-h-screen bg-slate-50 pt-24 pb-10">
   <div class="mx-auto w-full max-w-screen-xl px-4">
 
-    <!-- Header -->
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-900">Detalle del vehículo</h1>
@@ -37,17 +36,14 @@
       </div>
     </div>
 
-    <!-- Sin vehículo -->
     <div *ngIf="!vehiculo" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <p class="text-sm text-gray-600">
         No se encontró el vehículo. Verifica el ID o regresa al listado.
       </p>
     </div>
 
-    <!-- Contenido -->
     <div *ngIf="vehiculo" class="grid gap-5 lg:grid-cols-3">
 
-      <!-- Columna izquierda (Resumen) -->
       <div class="lg:col-span-1">
         <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-5">
           <div class="flex items-start justify-between gap-3">
@@ -104,7 +100,6 @@
         </div>
       </div>
 
-      <!-- Columna derecha (Expediente) -->
       <div class="lg:col-span-2">
         <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
 

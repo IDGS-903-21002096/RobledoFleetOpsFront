@@ -15,28 +15,21 @@ type DocumentoItem = {
   tipo: string;
   archivo: File | null;
   notas: string;
-
   estado: EstadoDoc;
   progreso: number;
-
-  // Guardado local (base64 DataURL)
   dataUrl: string | null;
   mimeType: string | null;
-
-  // Validaciones / UI
   touchedNombre: boolean;
   touchedArchivo: boolean;
   errorArchivo: string | null;
 };
 
 type HistorialDoc = {
-  idLocal: string; // <-- para eliminar de forma segura
+  idLocal: string;
   nombre: string;
   tipo?: string;
   archivoNombre: string;
   fecha: string;
-
-  // Para preview/descarga en tabla
   dataUrl: string;
   mimeType: string;
 };
@@ -46,7 +39,7 @@ type PreviewItem = {
   archivoNombre: string;
   dataUrl: string;
   mimeType: string;
-  safeUrl: SafeResourceUrl; // para iframe pdf
+  safeUrl: SafeResourceUrl;
 };
 
 @Component({
@@ -70,10 +63,8 @@ export class VehiculoDocumentosComponent {
   documentos: DocumentoItem[] = [];
   submitAttempted = false;
 
-  // Historial (ya cargados)
   historial: HistorialDoc[] = [];
 
-  // Modal preview
   previewOpen = false;
   previewDoc: PreviewItem | null = null;
 
@@ -87,9 +78,6 @@ export class VehiculoDocumentosComponent {
     this.vehiculoId = parsed && !Number.isNaN(parsed) ? parsed : null;
   }
 
-  // =========================
-  // UI helpers
-  // =========================
   addDocumento(): void {
     const newItem: DocumentoItem = {
       idLocal: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
@@ -115,17 +103,12 @@ export class VehiculoDocumentosComponent {
     this.documentos = this.documentos.filter((_, i) => i !== index);
   }
 
-  // =========================
-  // Archivos: solo PDF o Imagen, guardando base64
-  // =========================
   async onFileChange(event: Event, doc: DocumentoItem): Promise<void> {
     const input = event.target as HTMLInputElement | null;
     const file = input?.files?.[0] ?? null;
 
     doc.archivo = file;
     doc.touchedArchivo = true;
-
-    // reset
     doc.errorArchivo = null;
     doc.dataUrl = null;
     doc.mimeType = null;
@@ -193,9 +176,6 @@ export class VehiculoDocumentosComponent {
     setTimeout(tick, 120);
   }
 
-  // =========================
-  // Preview helpers
-  // =========================
   isPdfMime(mimeType: string): boolean {
     return mimeType === 'application/pdf';
   }
@@ -245,14 +225,10 @@ export class VehiculoDocumentosComponent {
     a.remove();
   }
 
-  // =========================
-  // Eliminar (historial)
-  // =========================
   removeHistorial(h: HistorialDoc): void {
     const ok = confirm(`¿Eliminar el documento "${h.nombre}" del historial?`);
     if (!ok) return;
 
-    // si está abierto en preview, ciérralo
     if (this.previewDoc?.archivoNombre === h.archivoNombre && this.previewDoc?.nombre === h.nombre) {
       this.closePreview();
     }
@@ -260,9 +236,6 @@ export class VehiculoDocumentosComponent {
     this.historial = this.historial.filter((x) => x.idLocal !== h.idLocal);
   }
 
-  // =========================
-  // Validaciones
-  // =========================
   isValidNombreDoc(v: string): boolean {
     return (v ?? '').trim().length >= 2;
   }
@@ -280,9 +253,6 @@ export class VehiculoDocumentosComponent {
     return this.documentos.every((d) => this.isValidItem(d));
   }
 
-  // =========================
-  // Acciones
-  // =========================
   onRegresar(): void {
     if (this.vehiculoId) {
       this.router.navigate(['/vehiculos', this.vehiculoId]);

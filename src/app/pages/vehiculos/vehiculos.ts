@@ -10,10 +10,10 @@ type EstatusVehiculo = 'Asignado' | 'Disponible' | 'En taller';
 
 type VehiculoCard = {
   id: number;
-  nombre: string;      // Nombre del vehículo / unidad
-  tipo: string;        // Autobús, Van, etc.
-  grupo?: string;      // Opcional
-  placa?: string;      // Opcional
+  nombre: string;
+  tipo: string;
+  grupo?: string;
+  placa?: string;
   estatus: EstatusVehiculo;
 };
 
@@ -26,8 +26,6 @@ type VehiculoCard = {
 export class VehiculosComponent {
   search = '';
   pageSize = 12;
-
-  // Mock data (luego API)
   vehiculos: VehiculoCard[] = [
     { id: 1, nombre: 'Unidad 01', tipo: 'Autobús', grupo: 'BUS', placa: 'GTO-123-A', estatus: 'Asignado' },
     { id: 2, nombre: 'Unidad 02', tipo: 'Van', grupo: 'SPRINTER', placa: 'GTO-456-B', estatus: 'Disponible' },
@@ -57,8 +55,6 @@ export class VehiculosComponent {
 
     return list.slice(0, this.pageSize);
   }
-
-  // ===== Acciones =====
 
   onAgregarVehiculo(): void {
     this.router.navigate(['/vehiculos/nuevo']);

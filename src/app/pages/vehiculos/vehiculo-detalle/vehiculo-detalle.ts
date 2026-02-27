@@ -13,18 +13,15 @@ type VehiculoDetalle = {
   marca: string;
   modelo: string;
   anio: number | null;
-
   tipoVehiculo: string;
   statusVehiculo: StatusVehiculo;
-
-  // Opcionales (expediente)
   grupo?: string;
   numeroSerie?: string;
   placa?: string;
   color?: string;
   companiaSeguros?: string;
   polizaSeguro?: string;
-  vigenciaPoliza?: string; // YYYY-MM-DD
+  vigenciaPoliza?: string;
 
   inicioEstadisticas?: 'Fecha de registro' | 'Fecha de compra' | '';
   medidaUso?: 'Kilómetros' | 'Millas' | 'Horas' | '';
@@ -41,10 +38,8 @@ type VehiculoDetalle = {
 export class VehiculoDetalleComponent {
   vehiculoId: number | null = null;
 
-  // Para el detalle seleccionado
   vehiculo: VehiculoDetalle | null = null;
 
-  // Mock (luego API)
   private readonly mockVehiculos: VehiculoDetalle[] = [
     {
       id: 1,
@@ -100,18 +95,13 @@ export class VehiculoDetalleComponent {
     }
   }
 
-  // ===== Helpers UI =====
-
   statusBadgeClass(s: StatusVehiculo): string {
-    // verde: disponible, azul: asignado, ámbar: taller
     if (s === 'Disponible') return 'bg-green-100 text-green-700';
     if (s === 'Asignado') return 'bg-blue-100 text-blue-700';
     return 'bg-amber-100 text-amber-700';
   }
 
   formatDate(v?: string): string {
-    // Si viene YYYY-MM-DD lo dejamos así (simple).
-    // Luego lo puedes formatear con DatePipe si quieres.
     return v?.trim() ? v : '—';
   }
 
@@ -120,8 +110,6 @@ export class VehiculoDetalleComponent {
     const s = String(v).trim();
     return s.length ? s : '—';
   }
-
-  // ===== Acciones =====
 
   onRegresar(): void {
     this.router.navigate(['/vehiculos']);

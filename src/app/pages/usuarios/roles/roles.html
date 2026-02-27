@@ -1,0 +1,264 @@
+<app-cabecera></app-cabecera>
+
+<!-- MISMA ESTRUCTURA QUE USUARIOS -->
+<main class="min-h-screen bg-slate-50 pt-24 pb-10">
+  <div class="mx-auto w-full max-w-screen-xl px-4">
+
+    <!-- Header: título izquierda + botón derecha -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Roles</h1>
+        <p class="text-sm text-slate-500">Configuración de roles y permisos del sistema.</p>
+      </div>
+
+      <button
+        type="button"
+        class="shrink-0 inline-flex items-center gap-2
+               text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+               hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+               font-semibold rounded-full text-sm px-5 py-2.5
+               text-center leading-5 shadow transition active:scale-[0.98]"
+        (click)="onCrearRol()"
+      >
+        <span class="text-base leading-none">+</span>
+        <span>Crear rol</span>
+      </button>
+    </div>
+
+    <!-- Controles: (izquierda vacío) + Buscador a la derecha -->
+    <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div></div>
+
+      <!-- Buscador (mismo estilo) -->
+      <form class="w-full md:max-w-md">
+        <label for="searchRoles" class="sr-only">Buscar</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+            <svg
+              class="w-4 h-4 text-slate-500"
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="2"
+                d="m21 21-3.5-3.5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
+              />
+            </svg>
+          </div>
+
+          <input
+            id="searchRoles"
+            type="search"
+            class="block w-full p-3 ps-10 bg-white border border-gray-300
+                   text-gray-900 text-sm rounded-full
+                   focus:ring-blue-500 focus:border-blue-500 shadow-sm
+                   placeholder:text-gray-400"
+            placeholder="Buscar rol..."
+            [(ngModel)]="search"
+            name="search"
+          />
+
+          <button
+            type="button"
+            class="absolute end-2 bottom-2
+                   text-white bg-gradient-to-r from-blue-500 to-blue-700
+                   hover:from-blue-600 hover:to-blue-800
+                   focus:ring-4 focus:ring-blue-300
+                   font-medium rounded-full text-xs px-4 py-1.5
+                   shadow"
+          >
+            Buscar
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Grid de tarjetas (misma estética que Usuarios) -->
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+
+      <div
+        *ngFor="let r of filteredRoles()"
+        class="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 hover:shadow-md transition cursor-pointer"
+        (click)="openDetalle(r)"
+        role="button"
+        tabindex="0"
+      >
+        <!-- Top -->
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <!-- Icono / badge circular -->
+            <div class="h-12 w-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden">
+              <svg class="w-6 h-6 text-blue-700" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2a5 5 0 00-5 5v1H6a2 2 0 00-2 2v9a3 3 0 003 3h10a3 3 0 003-3v-9a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 6V7a3 3 0 116 0v1H9z"/>
+              </svg>
+            </div>
+
+            <!-- Nombre + Estado -->
+            <div>
+              <h3 class="font-semibold text-gray-900 leading-tight">
+                {{ r.nombre }}
+              </h3>
+
+              <div class="mt-1 inline-flex items-center gap-2">
+                <span
+                  class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
+                  [ngClass]="r.activo ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
+                >
+                  <span
+                    class="h-2 w-2 rounded-full"
+                    [ngClass]="r.activo ? 'bg-emerald-500' : 'bg-rose-500'"
+                  ></span>
+                  {{ r.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="mt-4 text-sm space-y-1.5">
+          <p class="text-gray-700">
+            <span class="font-semibold text-gray-700">Descripción:</span>
+            <span class="text-gray-700"> {{ r.descripcion || '—' }}</span>
+          </p>
+
+          <p class="text-gray-700">
+            <span class="font-semibold text-gray-700">Permisos:</span>
+            <span> {{ r.permisos.length }}</span>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+          <span class="text-xs text-gray-500">ID: {{ r.id }}</span>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                     hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                     font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
+              (click)="onEditar(r); $event.stopPropagation()"
+            >
+              Editar
+            </button>
+
+            <button
+              type="button"
+              class="text-white font-semibold rounded-full text-xs px-4 py-2 shadow-sm
+                     focus:ring-4 focus:outline-none
+                     bg-gradient-to-r
+                     transition"
+              [ngClass]="r.activo
+                ? 'from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:to-red-800 focus:ring-red-300'
+                : 'from-emerald-500 via-emerald-600 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 focus:ring-emerald-300'"
+              (click)="onToggleEstado(r); $event.stopPropagation()"
+            >
+              {{ r.activo ? 'Desactivar' : 'Activar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MODAL DETALLE -->
+    <div
+      *ngIf="isDetalleOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      aria-modal="true"
+      role="dialog"
+    >
+      <!-- Backdrop -->
+      <div class="absolute inset-0 bg-black/50" (click)="closeDetalle()"></div>
+
+      <!-- Card -->
+      <div class="relative w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-gray-200">
+        <div class="flex items-start justify-between gap-3 p-5 border-b border-gray-200">
+          <div class="flex items-center gap-3">
+            <div class="h-12 w-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden">
+              <svg class="w-6 h-6 text-blue-700" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2a5 5 0 00-5 5v1H6a2 2 0 00-2 2v9a3 3 0 003 3h10a3 3 0 003-3v-9a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 6V7a3 3 0 116 0v1H9z"/>
+              </svg>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Detalle del rol</h3>
+              <p class="text-sm text-gray-500">{{ selectedRol?.nombre }}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="rounded-full p-2 hover:bg-gray-100 transition"
+            (click)="closeDetalle()"
+            aria-label="Cerrar"
+          >
+            <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-5 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Nombre</p>
+              <p class="font-semibold text-gray-900">{{ selectedRol?.nombre || '—' }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <p class="text-xs text-gray-500">Estado</p>
+              <p class="font-semibold text-gray-900">{{ selectedRol?.activo ? 'Activo' : 'Inactivo' }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4 md:col-span-2">
+              <p class="text-xs text-gray-500">Descripción</p>
+              <p class="font-semibold text-gray-900">{{ selectedRol?.descripcion || '—' }}</p>
+            </div>
+
+            <div class="rounded-xl border border-gray-200 p-4 md:col-span-2">
+              <p class="text-xs text-gray-500">Permisos ({{ selectedRol?.permisos?.length || 0 }})</p>
+
+              <div class="mt-2 flex flex-wrap gap-2">
+                <span
+                  *ngFor="let p of (selectedRol?.permisos || [])"
+                  class="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-semibold"
+                >
+                  {{ p }}
+                </span>
+
+                <span
+                  *ngIf="(selectedRol?.permisos?.length || 0) === 0"
+                  class="text-sm text-slate-500"
+                >
+                  — Sin permisos asignados —
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SOLO CERRAR -->
+        <div class="flex items-center justify-end p-5 border-t border-gray-200">
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-full
+                   bg-gray-200 hover:bg-gray-300 text-gray-800
+                   text-sm font-semibold px-6 py-2.5 shadow-sm"
+            (click)="closeDetalle()"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<app-footer></app-footer>

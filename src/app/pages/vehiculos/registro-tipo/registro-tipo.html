@@ -1,0 +1,126 @@
+<app-cabecera></app-cabecera>
+
+<main class="min-h-screen bg-slate-50 pt-24 pb-10">
+  <div class="mx-auto w-full max-w-screen-xl px-4">
+
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">
+          {{ isEditMode ? 'Editar tipo de vehículo' : 'Crear tipo de vehículo' }}
+        </h1>
+        <p class="text-sm text-slate-500">Configura el catálogo de tipos para el registro de unidades.</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-full
+                 bg-gray-200 hover:bg-gray-300 text-gray-800
+                 text-sm font-semibold px-6 py-2.5 shadow-sm"
+          (click)="onRegresar()"
+        >
+          Regresar
+        </button>
+
+        <button
+          type="button"
+          class="shrink-0 inline-flex items-center gap-2
+                 text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                 font-semibold rounded-full text-sm px-6 py-2.5
+                 text-center leading-5 shadow transition active:scale-[0.98]"
+          (click)="onGuardar()"
+        >
+          Guardar
+        </button>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-5">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+
+        <div class="md:col-span-5">
+          <label class="block text-sm font-semibold text-gray-900 mb-1">
+            Nombre <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            class="block w-full p-3 bg-white border border-gray-300
+                   text-gray-900 text-sm rounded-full
+                   focus:ring-blue-500 focus:border-blue-500 shadow-sm
+                   placeholder:text-gray-400"
+            placeholder="Ej. Autobús"
+            [(ngModel)]="form.nombre"
+            name="nombre"
+          />
+          <p *ngIf="submitted && !form.nombre?.trim()" class="mt-1 text-xs text-red-600">
+            El nombre es obligatorio.
+          </p>
+        </div>
+
+        <div class="md:col-span-5">
+          <label class="block text-sm font-semibold text-gray-900 mb-1">
+            Descripción
+          </label>
+          <input
+            type="text"
+            class="block w-full p-3 bg-white border border-gray-300
+                   text-gray-900 text-sm rounded-full
+                   focus:ring-blue-500 focus:border-blue-500 shadow-sm
+                   placeholder:text-gray-400"
+            placeholder="Ej. Transporte de personal"
+            [(ngModel)]="form.descripcion"
+            name="descripcion"
+          />
+        </div>
+
+        <div class="md:col-span-2 flex md:justify-end md:items-end">
+          <label class="inline-flex items-center cursor-pointer gap-3 select-none">
+            <input type="checkbox" class="sr-only peer" [(ngModel)]="form.activo" name="activo" />
+            <div
+              class="relative w-11 h-6 bg-gray-200 rounded-full peer
+                     peer-focus:ring-4 peer-focus:ring-blue-300
+                     peer-checked:bg-emerald-500 transition"
+            >
+              <div
+                class="absolute top-[2px] left-[2px] bg-white border border-gray-200 rounded-full h-5 w-5 transition
+                       peer-checked:translate-x-5"
+              ></div>
+            </div>
+            <span class="text-sm font-semibold" [ngClass]="form.activo ? 'text-emerald-700' : 'text-gray-700'">
+              {{ form.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="mt-6 flex items-center justify-end gap-2">
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-full
+               bg-gray-200 hover:bg-gray-300 text-gray-800
+               text-sm font-semibold px-6 py-2.5 shadow-sm"
+        (click)="onRegresar()"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        class="shrink-0 inline-flex items-center gap-2
+               text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+               hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+               font-semibold rounded-full text-sm px-6 py-2.5
+               text-center leading-5 shadow transition active:scale-[0.98]"
+        (click)="onGuardar()"
+      >
+        Guardar cambios
+      </button>
+    </div>
+
+  </div>
+</main>
+
+<app-footer></app-footer>

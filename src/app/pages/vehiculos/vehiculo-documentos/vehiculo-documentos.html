@@ -3,7 +3,6 @@
 <main class="min-h-screen bg-slate-50 pt-24 pb-10">
   <div class="mx-auto w-full max-w-screen-xl px-4">
 
-    <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-900">Documentos del vehículo</h1>
@@ -40,7 +39,6 @@
       </div>
     </div>
 
-    <!-- Aviso -->
     <div class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4">
       <p class="text-sm text-blue-800">
         Aquí puedes cargar cualquier cantidad de documentos (tarjeta de circulación, póliza, verificación, etc.).
@@ -48,7 +46,6 @@
       </p>
     </div>
 
-    <!-- Carga -->
     <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       <div class="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
         <p class="text-sm font-semibold text-gray-900">Carga de documentos</p>
@@ -81,7 +78,6 @@
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div class="flex-1">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <!-- Nombre -->
                   <div>
                     <label
                       class="block mb-2 text-sm font-medium"
@@ -116,8 +112,6 @@
                       <span class="font-medium">Oh, snap!</span> Escribe un nombre para el documento.
                     </p>
                   </div>
-
-                  <!-- Tipo -->
                   <div>
                     <label class="block mb-2 text-sm font-medium text-gray-700">Tipo</label>
                     <select
@@ -132,7 +126,6 @@
                     </select>
                   </div>
 
-                  <!-- Archivo -->
                   <div class="md:col-span-2">
                     <label
                       class="block mb-2 text-sm font-medium"
@@ -200,7 +193,6 @@
                     </div>
                   </div>
 
-                  <!-- Notas -->
                   <div class="md:col-span-2">
                     <label class="block mb-2 text-sm font-medium text-gray-700">Notas (opcional)</label>
                     <input
@@ -270,7 +262,6 @@
       </div>
     </div>
 
-    <!-- Historial -->
     <div class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div class="border-b border-gray-100 px-6 py-4">
         <p class="text-sm font-semibold text-gray-900">Historial (mock)</p>
@@ -348,7 +339,6 @@
   </div>
 </main>
 
-<!-- Modal preview -->
 <div *ngIf="previewOpen && previewDoc" class="fixed inset-0 z-50">
   <div class="absolute inset-0 bg-black/50" (click)="closePreview()"></div>
 

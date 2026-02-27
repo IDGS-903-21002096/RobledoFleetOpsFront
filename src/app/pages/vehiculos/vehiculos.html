@@ -1,16 +1,12 @@
 <app-cabecera></app-cabecera>
 
-<!-- MISMA ESTRUCTURA QUE PROVEEDORES -->
 <main class="min-h-screen bg-slate-50 pt-24 pb-10">
   <div class="mx-auto w-full max-w-screen-xl px-4">
-
-    <!-- Header: título izquierda + botón derecha -->
     <div class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-900">Vehículos</h1>
         <p class="text-sm text-slate-500">Gestión y consulta del inventario de vehículos.</p>
       </div>
-
       <button
         type="button"
         class="shrink-0 inline-flex items-center gap-2
@@ -24,13 +20,8 @@
         <span>Agregar vehículo</span>
       </button>
     </div>
-
-    <!-- Controles: (izquierda vacío) + Buscador a la derecha -->
     <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <!-- IZQUIERDA (para mantener el mismo acomodo) -->
       <div></div>
-
-      <!-- Buscador (mismo estilo que Proveedores) -->
       <form class="w-full md:max-w-md">
         <label for="searchVehiculos" class="sr-only">Buscar</label>
         <div class="relative">
@@ -50,7 +41,6 @@
               />
             </svg>
           </div>
-
           <input
             id="searchVehiculos"
             type="search"
@@ -62,7 +52,6 @@
             [(ngModel)]="search"
             name="search"
           />
-
           <button
             type="button"
             class="absolute end-2 bottom-2
@@ -77,8 +66,6 @@
         </div>
       </form>
     </div>
-
-    <!-- Tabla -->
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm text-gray-700">
@@ -91,16 +78,12 @@
               <th scope="col" class="px-6 py-4 text-right">Acciones</th>
             </tr>
           </thead>
-
           <tbody>
-            <!-- Sin datos -->
             <tr *ngIf="vehiculos?.length === 0">
               <td colspan="5" class="px-6 py-10 text-center text-gray-500">
                 No hay vehículos registrados.
               </td>
             </tr>
-
-            <!-- Filas -->
             <tr
               *ngFor="let v of filteredVehiculos()"
               class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
@@ -128,11 +111,8 @@
                   {{ v.estatus }}
                 </span>
               </td>
-
               <td class="px-6 py-4 text-right">
                 <div class="inline-flex items-center gap-2" (click)="$event.stopPropagation()">
-
-                  <!-- Documentos -->
                   <button
                     type="button"
                     class="text-white bg-gradient-to-r from-slate-600 via-slate-700 to-slate-800
@@ -142,8 +122,6 @@
                   >
                     Documentos
                   </button>
-
-                  <!-- Editar -->
                   <button
                     type="button"
                     class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
@@ -153,8 +131,6 @@
                   >
                     Editar
                   </button>
-
-                  <!-- Eliminar -->
                   <button
                     type="button"
                     class="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700
@@ -164,7 +140,6 @@
                   >
                     Eliminar
                   </button>
-
                 </div>
               </td>
             </tr>
@@ -172,8 +147,6 @@
           </tbody>
         </table>
       </div>
-
-      <!-- Footer tabla -->
       <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-xs text-gray-600">
         <span>Total: <span class="font-semibold">{{ filteredVehiculos().length || 0 }}</span></span>
         <span class="text-gray-400">Robledo FleetOps</span>

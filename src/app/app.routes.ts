@@ -7,11 +7,17 @@ import { VehiculosComponent } from './pages/vehiculos/vehiculos';
 import { UsuariosComponent } from './pages/usuarios/usuarios';
 import { ProveedoresComponent } from './pages/proveedores/proveedores';
 import { InventarioComponent } from './pages/inventario/inventario';
+import { RolesComponent } from './pages/usuarios/roles/roles';
+import { TiposComponent } from './pages/vehiculos/tipos/tipos';
+import { GruposComponent } from './pages/inventario/grupos/grupos';
 
 import { RegistroUsuarioComponent } from './pages/usuarios/registro-usuario/registro-usuario';
 import { RegistroVehiculo } from './pages/vehiculos/registro-vehiculo/registro-vehiculo';
 import { RegistroProveedorComponent } from './pages/proveedores/registro-proveedor/registro-proveedor';
 import { RegistroArticuloComponent } from './pages/inventario/registro-articulo/registro-articulo';
+import { RegistroRolComponent } from './pages/usuarios/registro-rol/registro-rol';
+import { RegistroTipoComponent } from './pages/vehiculos/registro-tipo/registro-tipo';
+import { RegistroGrupoComponent } from './pages/inventario/registro-grupo/registro-grupo';
 
 import { VehiculoDetalleComponent } from './pages/vehiculos/vehiculo-detalle/vehiculo-detalle';
 import { VehiculoDocumentosComponent } from './pages/vehiculos/vehiculo-documentos/vehiculo-documentos';
@@ -25,15 +31,24 @@ export const routes: Routes = [
   { path: 'vehiculos', component: VehiculosComponent },
   { path: 'vehiculos/nuevo', component: RegistroVehiculo },
   { path: 'vehiculos/:id/editar', component: RegistroVehiculo },
+  { path: 'vehiculos/tipos', component: TiposComponent },
+  { path: 'vehiculos/tipos/nuevo', component: RegistroTipoComponent },
+  { path: 'vehiculos/tipos/:id/editar', component: RegistroTipoComponent },
   { path: 'vehiculos/:id/documentos', component: VehiculoDocumentosComponent },
   { path: 'vehiculos/:id', component: VehiculoDetalleComponent },
 
   { path: 'inventario', component: InventarioComponent },
   { path: 'inventario/nuevo', component: RegistroArticuloComponent },
   { path: 'inventario/:id/editar', component: RegistroArticuloComponent },
+  { path: 'inventario/grupos', component: GruposComponent },
+  { path: 'inventario/grupos/nuevo', component: RegistroGrupoComponent },
+  { path: 'inventario/grupos/:id/editar', component: RegistroGrupoComponent },
 
   { path: 'usuarios', component: UsuariosComponent },
   { path: 'usuarios/nuevo', component: RegistroUsuarioComponent },
+  { path: 'usuarios/roles', component: RolesComponent },
+  { path: 'usuarios/roles/nuevo', component: RegistroRolComponent },
+  { path: 'usuarios/roles/:id/editar', component: RegistroRolComponent },
   { path: 'usuarios/:id/editar', component: RegistroUsuarioComponent },
 
   { path: 'proveedores', component: ProveedoresComponent },
