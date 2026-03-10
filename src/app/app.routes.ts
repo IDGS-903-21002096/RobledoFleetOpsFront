@@ -16,6 +16,9 @@ import { RegistroUsuarioComponent } from './pages/usuarios/registro-usuario/regi
 import { RegistroVehiculo } from './pages/vehiculos/registro-vehiculo/registro-vehiculo';
 import { RegistroProveedorComponent } from './pages/proveedores/registro-proveedor/registro-proveedor';
 import { RegistroArticuloComponent } from './pages/inventario/registro-articulo/registro-articulo';
+import { EntradasComponent } from './pages/inventario/entradas/entradas';
+import { SalidasComponent } from './pages/inventario/salidas/salidas';
+import { HistorialMovimientosComponent } from './pages/inventario/historial-movimientos/historial-movimientos';
 import { RegistroRolComponent } from './pages/usuarios/registro-rol/registro-rol';
 import { RegistroTipoComponent } from './pages/vehiculos/registro-tipo/registro-tipo';
 import { RegistroGrupoComponent } from './pages/inventario/registro-grupo/registro-grupo';
@@ -46,6 +49,9 @@ export const routes: Routes = [
   { path: 'inventario/grupos', component: GruposComponent },
   { path: 'inventario/grupos/nuevo', component: RegistroGrupoComponent },
   { path: 'inventario/grupos/:id/editar', component: RegistroGrupoComponent },
+  { path: 'inventario/entradas', component: EntradasComponent },
+  { path: 'inventario/salidas', component: SalidasComponent },
+  { path: 'inventario/historial-movimientos', component: HistorialMovimientosComponent },
 
   { path: 'mantenimientos', component: MantenimientosComponent },
   { path: 'mantenimientos/registro', component: RegistroMantenimientoComponent },
