@@ -30,7 +30,6 @@ export class CabeceraComponent {
     this.userMenuOpen = false;
   }
 
-  // Cierra dropdown si das click fuera
   @HostListener('document:click')
   onDocClick() {
     this.userMenuOpen = false;

@@ -10,6 +10,7 @@ import { InventarioComponent } from './pages/inventario/inventario';
 import { RolesComponent } from './pages/usuarios/roles/roles';
 import { TiposComponent } from './pages/vehiculos/tipos/tipos';
 import { GruposComponent } from './pages/inventario/grupos/grupos';
+import { MantenimientosComponent } from './pages/mantenimientos/mantenimientos';
 
 import { RegistroUsuarioComponent } from './pages/usuarios/registro-usuario/registro-usuario';
 import { RegistroVehiculo } from './pages/vehiculos/registro-vehiculo/registro-vehiculo';
@@ -18,9 +19,11 @@ import { RegistroArticuloComponent } from './pages/inventario/registro-articulo/
 import { RegistroRolComponent } from './pages/usuarios/registro-rol/registro-rol';
 import { RegistroTipoComponent } from './pages/vehiculos/registro-tipo/registro-tipo';
 import { RegistroGrupoComponent } from './pages/inventario/registro-grupo/registro-grupo';
+import { RegistroMantenimientoComponent } from './pages/mantenimientos/registro-mantenimiento/registro-mantenimiento';
 
 import { VehiculoDetalleComponent } from './pages/vehiculos/vehiculo-detalle/vehiculo-detalle';
 import { VehiculoDocumentosComponent } from './pages/vehiculos/vehiculo-documentos/vehiculo-documentos';
+import { RecordatoriosComponent } from './pages/mantenimientos/recordatorios/recordatorios';
 
 export const routes: Routes = [
 
@@ -43,6 +46,10 @@ export const routes: Routes = [
   { path: 'inventario/grupos', component: GruposComponent },
   { path: 'inventario/grupos/nuevo', component: RegistroGrupoComponent },
   { path: 'inventario/grupos/:id/editar', component: RegistroGrupoComponent },
+
+  { path: 'mantenimientos', component: MantenimientosComponent },
+  { path: 'mantenimientos/registro', component: RegistroMantenimientoComponent },
+  { path: 'mantenimientos/recordatorios', component: RecordatoriosComponent },
 
   { path: 'usuarios', component: UsuariosComponent },
   { path: 'usuarios/nuevo', component: RegistroUsuarioComponent },

@@ -2,8 +2,6 @@
 
 <main class="min-h-screen bg-slate-50 pt-24 pb-10">
   <div class="mx-auto w-full max-w-screen-xl px-4">
-
-    <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-900">Registrar artículos</h1>
@@ -24,7 +22,6 @@
       </button>
     </div>
 
-    <!-- Tabs -->
     <div class="mb-4 flex items-center gap-2">
       <button
         type="button"
@@ -51,10 +48,8 @@
       </button>
     </div>
 
-    <!-- Card contenedora -->
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
-      <!-- INDIVIDUAL -->
       <div *ngIf="modo === 'individual'" class="p-6">
         <div class="mb-4">
           <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide">Registro individual</h2>
@@ -63,9 +58,7 @@
 
         <form class="space-y-4" (submit)="$event.preventDefault()">
 
-          <!-- Fila 1 -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Código -->
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-1">Código *</label>
               <input
@@ -81,7 +74,6 @@
               </p>
             </div>
 
-            <!-- Nombre -->
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-1">Nombre *</label>
               <input
@@ -98,9 +90,7 @@
             </div>
           </div>
 
-          <!-- Fila 2 -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Modelo -->
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-1">Modelo (opcional)</label>
               <input
@@ -113,7 +103,6 @@
               />
             </div>
 
-            <!-- Punto de reorden -->
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-1">Punto de reorden (opcional)</label>
               <input
@@ -128,7 +117,6 @@
             </div>
           </div>
 
-          <!-- Descripción -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Descripción (opcional)</label>
             <textarea
@@ -141,7 +129,6 @@
             ></textarea>
           </div>
 
-          <!-- Grupo / Unidad -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-1">Grupo *</label>
@@ -176,7 +163,6 @@
             </div>
           </div>
 
-          <!-- Acciones -->
           <div class="pt-2 flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -202,14 +188,12 @@
             </button>
           </div>
 
-          <!-- Mensaje -->
           <div *ngIf="msg" class="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
             {{ msg }}
           </div>
         </form>
       </div>
 
-      <!-- MÚLTIPLE -->
       <div *ngIf="modo === 'multiple'" class="p-6">
         <div class="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
@@ -233,7 +217,6 @@
           </button>
         </div>
 
-        <!-- Tabla -->
         <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-gray-700">
@@ -364,7 +347,6 @@
           </div>
         </div>
 
-        <!-- Acciones -->
         <div class="mt-4 flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -389,14 +371,11 @@
             Cancelar
           </button>
         </div>
-
         <div *ngIf="msg" class="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
           {{ msg }}
         </div>
       </div>
-
     </div>
-
   </div>
 </main>
 

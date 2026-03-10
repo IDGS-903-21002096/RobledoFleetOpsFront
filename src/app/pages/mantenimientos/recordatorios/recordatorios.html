@@ -2,28 +2,31 @@
 
 <main class="min-h-screen bg-slate-50 pt-24 pb-10">
   <div class="mx-auto w-full max-w-screen-xl px-4">
+
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-slate-900">Vehículos</h1>
-        <p class="text-sm text-slate-500">Gestión y consulta del inventario de vehículos.</p>
+        <h1 class="text-2xl font-bold text-slate-900">Recordatorios</h1>
+        <p class="text-sm text-slate-500">Mantenimientos próximos (ordenados por fecha).</p>
       </div>
+
       <button
         type="button"
         class="shrink-0 inline-flex items-center gap-2
-               text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
-               hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+               text-white bg-gradient-to-r from-slate-600 via-slate-700 to-slate-800
+               hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-slate-300
                font-semibold rounded-full text-sm px-5 py-2.5
                text-center leading-5 shadow transition active:scale-[0.98]"
-        (click)="onAgregarVehiculo()"
+        (click)="onVolver()"
       >
-        <span class="text-base leading-none">+</span>
-        <span>Agregar vehículo</span>
+        Regresar
       </button>
     </div>
+
     <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div></div>
+
       <form class="w-full md:max-w-md">
-        <label for="searchVehiculos" class="sr-only">Buscar</label>
+        <label for="searchRecordatorios" class="sr-only">Buscar</label>
         <div class="relative">
           <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
             <svg
@@ -41,17 +44,19 @@
               />
             </svg>
           </div>
+
           <input
-            id="searchVehiculos"
+            id="searchRecordatorios"
             type="search"
             class="block w-full p-3 ps-10 bg-white border border-gray-300
                    text-gray-900 text-sm rounded-full
                    focus:ring-blue-500 focus:border-blue-500 shadow-sm
                    placeholder:text-gray-400"
-            placeholder="Buscar vehículo..."
+            placeholder="Filtrar por orden, unidad, estatus, tipo, km..."
             [(ngModel)]="search"
             name="search"
           />
+
           <button
             type="button"
             class="absolute end-2 bottom-2
@@ -66,88 +71,108 @@
         </div>
       </form>
     </div>
+
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm text-gray-700">
           <thead class="bg-gray-50 text-xs uppercase text-gray-600">
             <tr>
-              <th scope="col" class="px-6 py-4">Vehículo</th>
+              <th scope="col" class="px-6 py-4">Orden</th>
+              <th scope="col" class="px-6 py-4">Fecha</th>
+              <th scope="col" class="px-6 py-4">Unidad</th>
               <th scope="col" class="px-6 py-4">Tipo</th>
-              <th scope="col" class="px-6 py-4">Grupo</th>
+              <th scope="col" class="px-6 py-4">Servicio</th>
+              <th scope="col" class="px-6 py-4">Kilometraje</th>
               <th scope="col" class="px-6 py-4">Estatus</th>
               <th scope="col" class="px-6 py-4 text-right">Acciones</th>
             </tr>
           </thead>
+
           <tbody>
-            <tr *ngIf="vehiculos?.length === 0">
-              <td colspan="5" class="px-6 py-10 text-center text-gray-500">
-                No hay vehículos registrados.
+            <tr *ngIf="recordatorios?.length === 0">
+              <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                No hay recordatorios registrados.
               </td>
             </tr>
+
             <tr
-              *ngFor="let v of filteredVehiculos()"
-              class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
-              (click)="onVerDetalle(v)"
+              *ngFor="let r of filteredRecordatorios()"
+              class="border-t border-gray-100 hover:bg-gray-50"
             >
               <td class="px-6 py-4">
-                <div class="font-semibold text-gray-900">{{ v.nombre }}</div>
-                <div class="text-xs text-gray-500">Placa: {{ v.placa || '—' }}</div>
+                <div class="font-semibold text-gray-900">{{ r.noOrden || ('#' + r.id) }}</div>
+                <div class="text-xs text-gray-500">ID: {{ r.id }}</div>
               </td>
 
-              <td class="px-6 py-4">{{ v.tipo || '—' }}</td>
-              <td class="px-6 py-4">{{ v.grupo || '—' }}</td>
+              <td class="px-6 py-4">
+                {{ r.fecha }}
+              </td>
+
+              <td class="px-6 py-4">
+                <div class="font-semibold text-gray-900">{{ r.unidad }}</div>
+                <div class="text-xs text-gray-500">Unidad ID: {{ r.unidadId }}</div>
+              </td>
+
+              <td class="px-6 py-4">
+                {{ r.tipoServicio }}
+              </td>
+
+              <td class="px-6 py-4">
+                {{ r.nivelServicio }}
+              </td>
+
+              <td class="px-6 py-4">
+                {{ r.kilometraje ?? '—' }}
+              </td>
 
               <td class="px-6 py-4">
                 <span
                   class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
                   [ngClass]="
-                    v.estatus === 'Disponible'
+                    r.estatus === 'Terminado'
                       ? 'bg-green-100 text-green-700'
-                      : (v.estatus === 'En taller'
+                      : (r.estatus === 'Cancelado'
                           ? 'bg-red-100 text-red-700'
-                          : 'bg-yellow-100 text-yellow-800')
+                          : (r.estatus === 'En proceso'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-yellow-100 text-yellow-800'))
                   "
                 >
-                  {{ v.estatus }}
+                  {{ r.estatus }}
                 </span>
               </td>
+
               <td class="px-6 py-4 text-right">
-                <div class="inline-flex items-center gap-2" (click)="$event.stopPropagation()">
-                  <button
-                    type="button"
-                    class="text-white bg-gradient-to-r from-slate-600 via-slate-700 to-slate-800
-                           hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-slate-300
-                           font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
-                    (click)="onIrDocumentos(v)"
-                  >
-                    Documentos
-                  </button>
+                <div class="inline-flex items-center gap-2">
                   <button
                     type="button"
                     class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
                            font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
-                    (click)="onEditar(v)"
+                    (click)="onEditarActualizar(r)"
                   >
                     Editar
                   </button>
+
                   <button
                     type="button"
                     class="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700
                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300
                            font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
-                    (click)="onEliminar(v)"
+                    (click)="onEliminar(r)"
                   >
                     Eliminar
                   </button>
                 </div>
               </td>
             </tr>
+
           </tbody>
         </table>
       </div>
+
       <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-xs text-gray-600">
-        <span>Total: <span class="font-semibold">{{ filteredVehiculos().length || 0 }}</span></span>
+        <span>Total: <span class="font-semibold">{{ filteredRecordatorios().length || 0 }}</span></span>
         <span class="text-gray-400">Robledo FleetOps</span>
       </div>
     </div>

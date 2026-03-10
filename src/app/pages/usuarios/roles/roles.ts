@@ -14,6 +14,7 @@ interface Rol {
   descripcion: string;
   permisos: string[];
   activo: boolean;
+  esSistema?: boolean;
 }
 
 @Component({
@@ -30,7 +31,7 @@ export class RolesComponent {
   // UI State
   // =========================
   search: string = '';
-  estadoFiltro: EstadoFiltro = 'TODOS'; // (si aún no usas filtro en HTML, no afecta)
+  estadoFiltro: EstadoFiltro = 'TODOS';
 
   isDetalleOpen: boolean = false;
   selectedRol: Rol | null = null;
@@ -68,6 +69,7 @@ export class RolesComponent {
         'mantenimientos.cerrar',
       ],
       activo: true,
+      esSistema: true,
     },
     {
       id: 2,
@@ -83,6 +85,7 @@ export class RolesComponent {
         'mantenimientos.aprobar',
       ],
       activo: true,
+      esSistema: false,
     },
     {
       id: 3,
@@ -90,6 +93,7 @@ export class RolesComponent {
       descripcion: 'Solo consulta información del sistema.',
       permisos: ['usuarios.ver', 'roles.ver', 'vehiculos.ver', 'inventario.ver', 'mantenimientos.ver'],
       activo: true,
+      esSistema: false,
     },
   ];
 
@@ -106,6 +110,10 @@ export class RolesComponent {
 
   private isAdminRol(rol: Rol): boolean {
     return this.normalize(rol.nombre) === 'administrador';
+  }
+
+  isProtectedRol(rol: Rol): boolean {
+    return !!rol.esSistema || this.isAdminRol(rol);
   }
 
   // =========================
@@ -125,10 +133,11 @@ export class RolesComponent {
         return haystack.includes(q);
       })
       .sort((a, b) => {
-        const aIsAdmin = this.isAdminRol(a);
-        const bIsAdmin = this.isAdminRol(b);
-        if (aIsAdmin && !bIsAdmin) return -1;
-        if (!aIsAdmin && bIsAdmin) return 1;
+        const aIsProtected = this.isProtectedRol(a);
+        const bIsProtected = this.isProtectedRol(b);
+
+        if (aIsProtected && !bIsProtected) return -1;
+        if (!aIsProtected && bIsProtected) return 1;
 
         if (a.activo !== b.activo) return a.activo ? -1 : 1;
 
@@ -155,8 +164,8 @@ export class RolesComponent {
   }
 
   onToggleEstado(r: Rol): void {
-    if (this.isAdminRol(r)) {
-      alert('El rol Administrador no se puede desactivar.');
+    if (this.isProtectedRol(r)) {
+      alert('Este rol está protegido y no se puede desactivar.');
       return;
     }
 

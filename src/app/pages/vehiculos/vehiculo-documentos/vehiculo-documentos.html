@@ -2,7 +2,6 @@
 
 <main class="min-h-screen bg-slate-50 pt-24 pb-10">
   <div class="mx-auto w-full max-w-screen-xl px-4">
-
     <div class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-900">Documentos del vehículo</h1>
@@ -335,13 +334,11 @@
         </div>
       </div>
     </div>
-
   </div>
 </main>
 
 <div *ngIf="previewOpen && previewDoc" class="fixed inset-0 z-50">
   <div class="absolute inset-0 bg-black/50" (click)="closePreview()"></div>
-
   <div class="relative mx-auto mt-16 w-[95%] max-w-4xl rounded-2xl bg-white shadow-xl overflow-hidden">
     <div class="flex items-start justify-between gap-3 border-b border-gray-100 px-5 py-4">
       <div>

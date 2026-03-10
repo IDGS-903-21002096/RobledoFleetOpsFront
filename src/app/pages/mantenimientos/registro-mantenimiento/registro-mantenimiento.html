@@ -1,0 +1,396 @@
+<app-cabecera></app-cabecera>
+
+<main class="min-h-screen bg-slate-50 pt-24 pb-10">
+  <div class="mx-auto w-full max-w-screen-xl px-4">
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Registro de mantenimiento</h1>
+        <p class="text-sm text-slate-500">Captura de orden de servicio, materiales y costos.</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="shrink-0 inline-flex items-center gap-2
+                 text-white bg-gradient-to-r from-slate-600 via-slate-700 to-slate-800
+                 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-slate-300
+                 font-semibold rounded-full text-sm px-5 py-2.5
+                 text-center leading-5 shadow transition active:scale-[0.98]"
+          (click)="onCancelar()"
+        >
+          Regresar
+        </button>
+
+        <button
+          type="button"
+          class="shrink-0 inline-flex items-center gap-2
+                 text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                 font-semibold rounded-full text-sm px-5 py-2.5
+                 text-center leading-5 shadow transition active:scale-[0.98]"
+          (click)="onGuardar()"
+        >
+          Guardar
+        </button>
+      </div>
+    </div>
+
+    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div class="p-6">
+
+        <h2 class="text-sm font-semibold text-slate-900 mb-4">Datos principales</h2>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">No. de orden (opcional)</label>
+            <input
+              type="text"
+              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                     focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
+              placeholder="Ej. OS-000123"
+              [(ngModel)]="noOrden"
+              name="noOrden"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Fecha *</label>
+            <input
+              type="date"
+              class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
+                     focus:ring-blue-500 focus:border-blue-500"
+              [ngClass]="touched.fecha && !fecha ? 'border-red-300' : 'border-gray-300'"
+              [(ngModel)]="fecha"
+              name="fecha"
+              (blur)="touched.fecha = true"
+            />
+            <p *ngIf="touched.fecha && !fecha" class="mt-1 text-xs text-red-600">La fecha es obligatoria.</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Horas usadas por el técnico</label>
+            <input
+              type="number"
+              min="0"
+              step="0.25"
+              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                     focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
+              placeholder="Ej. 2.5"
+              [(ngModel)]="horasTecnico"
+              name="horasTecnico"
+            />
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Unidad *</label>
+            <select
+              class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
+                     focus:ring-blue-500 focus:border-blue-500"
+              [ngClass]="touched.unidad && unidadId === null ? 'border-red-300' : 'border-gray-300'"
+              [(ngModel)]="unidadId"
+              name="unidadId"
+              (blur)="touched.unidad = true"
+            >
+              <option [ngValue]="null">Selecciona una unidad...</option>
+              <option *ngFor="let u of unidadesCatalogo" [ngValue]="u.id">
+                {{ u.nombre }}{{ u.placa ? ' • ' + u.placa : '' }}
+              </option>
+            </select>
+            <p *ngIf="touched.unidad && unidadId === null" class="mt-1 text-xs text-red-600">Selecciona una unidad.</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de servicio</label>
+            <select
+              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
+                     focus:ring-blue-500 focus:border-blue-500"
+              [(ngModel)]="tipoServicio"
+              name="tipoServicio"
+            >
+              <option value="Preventivo">Preventivo</option>
+              <option value="Correctivo">Correctivo</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Kilometraje *</label>
+            <input
+              type="number"
+              min="0"
+              class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
+                     focus:ring-blue-500 focus:border-blue-500"
+              [ngClass]="touched.kilometraje && (kilometraje === null || kilometraje < 0) ? 'border-red-300' : 'border-gray-300'"
+              placeholder="Ej. 120345"
+              [(ngModel)]="kilometraje"
+              name="kilometraje"
+              (blur)="touched.kilometraje = true"
+            />
+            <p *ngIf="touched.kilometraje && (kilometraje === null || kilometraje < 0)" class="mt-1 text-xs text-red-600">
+              El kilometraje es obligatorio.
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Estatus</label>
+            <select
+              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
+                     focus:ring-blue-500 focus:border-blue-500"
+              [(ngModel)]="estatus"
+              name="estatus"
+            >
+              <option value="Programado">Programado</option>
+              <option value="En proceso">En proceso</option>
+              <option value="Terminado">Terminado</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Nivel de servicio</label>
+            <select
+              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
+                     focus:ring-blue-500 focus:border-blue-500"
+              [(ngModel)]="nivelServicio"
+              name="nivelServicio"
+            >
+              <option value="Servicio menor">Servicio menor</option>
+              <option value="Servicio mayor">Servicio mayor</option>
+            </select>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Nombre del técnico(s) *</label>
+            <input
+              type="text"
+              class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
+                     focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+              [ngClass]="touched.tecnicos && tecnicos.trim().length === 0 ? 'border-red-300' : 'border-gray-300'"
+              placeholder="Ej. Juan Pérez, Luis Gómez"
+              [(ngModel)]="tecnicos"
+              name="tecnicos"
+              (blur)="touched.tecnicos = true"
+            />
+            <p *ngIf="touched.tecnicos && tecnicos.trim().length === 0" class="mt-1 text-xs text-red-600">
+              Captura el nombre del técnico o técnicos.
+            </p>
+          </div>
+        </div>
+
+        <div class="my-6 h-px bg-gray-100"></div>
+
+        <h2 class="text-sm font-semibold text-slate-900 mb-4">Checklist</h2>
+
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" class="h-4 w-4 rounded border-gray-300" [(ngModel)]="checklist.RevisionNiveles" name="RevisionNiveles" />
+            Revisión de niveles
+          </label>
+
+          <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" class="h-4 w-4 rounded border-gray-300" [(ngModel)]="checklist.LimpiezaAjusteFrenos" name="LimpiezaAjusteFrenos" />
+            Limpieza y ajuste de frenos
+          </label>
+
+          <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" class="h-4 w-4 rounded border-gray-300" [(ngModel)]="checklist.Engrasado" name="Engrasado" />
+            Engrasado
+          </label>
+
+          <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" class="h-4 w-4 rounded border-gray-300" [(ngModel)]="checklist.RevisionLuces" name="RevisionLuces" />
+            Revisión de luces
+          </label>
+
+          <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" class="h-4 w-4 rounded border-gray-300" [(ngModel)]="checklist.RevisionSuspension" name="RevisionSuspension" />
+            Revisión de suspensión
+          </label>
+
+          <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" class="h-4 w-4 rounded border-gray-300" [(ngModel)]="checklist.RevisionCarroceria" name="RevisionCarroceria" />
+            Revisión de carrocería
+          </label>
+
+          <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input type="checkbox" class="h-4 w-4 rounded border-gray-300" [(ngModel)]="checklist.RevisionSistemaElectrico" name="RevisionSistemaElectrico" />
+            Revisión de sistema eléctrico
+          </label>
+
+          <div class="md:col-span-2">
+            <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" class="h-4 w-4 rounded border-gray-300" [(ngModel)]="checklist.Otro" name="Otro" />
+              Otro
+            </label>
+
+            <div class="mt-2" *ngIf="checklist.Otro">
+              <input
+                type="text"
+                class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
+                       focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+                [ngClass]="checklist.Otro && touched.tecnicos && otroTexto.trim().length === 0 ? 'border-red-300' : 'border-gray-300'"
+                placeholder="Describe la observación..."
+                [(ngModel)]="otroTexto"
+                name="otroTexto"
+              />
+              <p *ngIf="checklist.Otro && otroTexto.trim().length === 0" class="mt-1 text-xs text-red-600">
+                Captura la observación de “Otro”.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="my-6 h-px bg-gray-100"></div>
+
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-slate-900">Material del inventario</h2>
+
+          <button
+            type="button"
+            class="inline-flex items-center gap-2
+                   text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                   hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                   font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
+            (click)="addMaterialLine()"
+          >
+            + Agregar material
+          </button>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-700">
+              <thead class="bg-gray-50 text-xs uppercase text-gray-600">
+                <tr>
+                  <th class="px-6 py-4">Material</th>
+                  <th class="px-6 py-4">Cantidad</th>
+                  <th class="px-6 py-4">Precio unitario</th>
+                  <th class="px-6 py-4 text-right">Subtotal</th>
+                  <th class="px-6 py-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let m of materiales; let i = index" class="border-t border-gray-100">
+                  <td class="px-6 py-4 min-w-[260px]">
+                    <select
+                      class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
+                             focus:ring-blue-500 focus:border-blue-500"
+                      [(ngModel)]="m.catalogoId"
+                      [name]="'mat_' + i"
+                      (change)="onSelectMaterial(m)"
+                    >
+                      <option [ngValue]="null">Selecciona material...</option>
+                      <option *ngFor="let c of materialesCatalogo" [ngValue]="c.id">
+                        {{ c.nombre }} ({{ c.unidad || 'u' }}) • ${{ c.precio }}
+                      </option>
+                    </select>
+                    <div class="mt-1 text-xs text-gray-500" *ngIf="m.nombre">
+                      {{ m.nombre }}{{ m.unidad ? ' • ' + m.unidad : '' }}
+                    </div>
+                  </td>
+
+                  <td class="px-6 py-4 w-[160px]">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
+                             focus:ring-blue-500 focus:border-blue-500"
+                      [(ngModel)]="m.cantidad"
+                      [name]="'qty_' + i"
+                    />
+                  </td>
+
+                  <td class="px-6 py-4 w-[200px]">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
+                             focus:ring-blue-500 focus:border-blue-500"
+                      [(ngModel)]="m.precioUnitario"
+                      [name]="'price_' + i"
+                    />
+                  </td>
+
+                  <td class="px-6 py-4 text-right font-semibold text-gray-900 w-[160px]">
+                    ${{ materialSubtotal(m) | number:'1.2-2' }}
+                  </td>
+
+                  <td class="px-6 py-4 text-right w-[140px]">
+                    <button
+                      type="button"
+                      class="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700
+                             hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300
+                             font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
+                      (click)="removeMaterialLine(i)"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+
+                <tr class="border-t border-gray-100 bg-gray-50/50">
+                  <td colspan="3" class="px-6 py-4 text-right text-sm text-gray-600 font-medium">
+                    Total materiales
+                  </td>
+                  <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">
+                    ${{ totalMateriales() | number:'1.2-2' }}
+                  </td>
+                  <td class="px-6 py-4"></td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="my-6 h-px bg-gray-100"></div>
+
+        <h2 class="text-sm font-semibold text-slate-900 mb-4">Costos</h2>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Precio mano de obra</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
+                     focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
+              placeholder="Ej. 1500"
+              [(ngModel)]="manoObra"
+              name="manoObra"
+            />
+          </div>
+
+          <div class="md:col-span-2 flex items-end">
+            <div class="w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div class="flex items-center justify-between text-sm text-gray-600">
+                <span>Total materiales</span>
+                <span class="font-semibold text-gray-900">${{ totalMateriales() | number:'1.2-2' }}</span>
+              </div>
+              <div class="mt-2 flex items-center justify-between text-sm text-gray-600">
+                <span>Mano de obra</span>
+                <span class="font-semibold text-gray-900">${{ (manoObra || 0) | number:'1.2-2' }}</span>
+              </div>
+              <div class="mt-3 h-px bg-gray-100"></div>
+              <div class="mt-3 flex items-center justify-between text-base">
+                <span class="font-semibold text-slate-900">Precio final del servicio</span>
+                <span class="font-bold text-slate-900 text-lg">${{ totalFinal() | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-xs text-gray-600">
+        <span>Robledo FleetOps</span>
+        <span class="text-gray-400">Mantenimientos</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<app-footer></app-footer>

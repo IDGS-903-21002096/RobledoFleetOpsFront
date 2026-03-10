@@ -30,7 +30,7 @@ interface ArticuloRow extends ArticuloForm {}
 export class RegistroArticuloComponent {
   modo: ModoRegistro = 'individual';
 
-  // Catálogos (mock)
+  // Catálogos
   grupos: string[] = ['HERRAMIENTA', 'REFACCIÓN', 'LUBRICANTE', 'CONSUMIBLE', 'OTRO'];
   unidades: string[] = ['pz', 'lt', 'kg', 'm', 'jgo', 'caja'];
 
