@@ -9,6 +9,13 @@ import { FooterComponent } from '../../../components/footer/footer';
 type InicioEstadisticas = 'Fecha de registro' | 'Fecha de compra';
 type MedidaUso = 'Kilómetros' | 'Millas' | 'Horas';
 type MedidaCombustible = 'Litros' | 'Galones';
+type DivisionVehiculo =
+  | 'Container'
+  | 'Carga León'
+  | 'Personal'
+  | 'Utilitarios'
+  | 'Remolques'
+  | 'Turismo';
 
 @Component({
   selector: 'app-registro-vehiculo',
@@ -26,6 +33,14 @@ export class RegistroVehiculo {
   tiposVehiculo: string[] = ['Autobús', 'Automóvil', 'Camión', 'Camioneta', 'Motocicleta', 'Otro'];
   statusVehiculo: string[] = ['Asignado', 'Disponible', 'En taller', 'Fuera de Servicio'];
   gruposVehiculo: string[] = ['Autobuses', 'Tractos', 'Urvan', 'Camionetas', 'Autos', 'Otro'];
+  divisionesVehiculo: DivisionVehiculo[] = [
+    'Container',
+    'Carga León',
+    'Personal',
+    'Utilitarios',
+    'Remolques',
+    'Turismo',
+  ];
 
   // =========================
   // Modelo (ngModel)
@@ -44,12 +59,12 @@ export class RegistroVehiculo {
 
     // Adicional
     grupo: string;
+    division: DivisionVehiculo | '';
     numeroSerie: string;
     placa: string;
     color: string;
     companiaSeguros: string;
     polizaSeguro: string;
-    vigenciaPoliza: string; // YYYY-MM-DD
   } = {
     id: '',
     nombreVehiculo: '',
@@ -63,12 +78,12 @@ export class RegistroVehiculo {
     medidaCombustible: '',
 
     grupo: '',
+    division: '',
     numeroSerie: '',
     placa: '',
     color: '',
     companiaSeguros: '',
     polizaSeguro: '',
-    vigenciaPoliza: '',
   };
 
   // =========================
@@ -87,12 +102,12 @@ export class RegistroVehiculo {
 
   // Opcionales
   grupoTouched = false;
+  divisionTouched = false;
   serieTouched = false;
   placaTouched = false;
   colorTouched = false;
   companiaTouched = false;
   polizaTouched = false;
-  vigenciaTouched = false;
 
   // =========================
   // Helpers
@@ -161,6 +176,10 @@ export class RegistroVehiculo {
     return !this.isNonEmptyText(v) || v.trim().length >= 2;
   }
 
+  isValidDivision(v: string): boolean {
+    return !this.isNonEmptyText(v) || this.divisionesVehiculo.includes(v as DivisionVehiculo);
+  }
+
   isValidSerie(v: string): boolean {
     if (!this.isNonEmptyText(v)) return true;
     const s = v.trim();
@@ -186,12 +205,6 @@ export class RegistroVehiculo {
   isValidPoliza(v: string): boolean {
     if (!this.isNonEmptyText(v)) return true;
     return v.trim().length >= 4;
-  }
-
-  isValidVigencia(v: string): boolean {
-    if (!this.isNonEmptyText(v)) return true;
-    const d = new Date(v);
-    return !Number.isNaN(d.getTime());
   }
 
   // =========================

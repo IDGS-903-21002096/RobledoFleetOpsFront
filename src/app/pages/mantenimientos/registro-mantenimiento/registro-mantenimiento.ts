@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
@@ -9,6 +9,8 @@ import { FooterComponent } from '../../../components/footer/footer';
 type TipoServicio = 'Preventivo' | 'Correctivo';
 type EstatusMantenimiento = 'Programado' | 'En proceso' | 'Terminado' | 'Cancelado';
 type ServicioNivel = 'Servicio menor' | 'Servicio mayor';
+type ModoRegistroMantenimiento = 'directo' | 'solicitud';
+type OrigenMantenimiento = 'DIRECTO' | 'SOLICITUD';
 
 type ChecklistKey =
   | 'RevisionNiveles'
@@ -35,13 +37,23 @@ type MaterialLinea = {
   precioUnitario: number;
 };
 
+type SolicitudMock = {
+  id: number;
+  folio: string;
+  unidadId: number;
+  tipoServicio: TipoServicio;
+  prioridad: 'Baja' | 'Media' | 'Alta' | 'Crítica';
+  kilometraje: number | null;
+  observaciones: string;
+};
+
 @Component({
   selector: 'app-registro-mantenimiento',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, CabeceraComponent, FooterComponent],
   templateUrl: './registro-mantenimiento.html',
 })
-export class RegistroMantenimientoComponent {
+export class RegistroMantenimientoComponent implements OnInit {
 
   // =========================
   // Catálogos (mock por ahora)
@@ -60,10 +72,52 @@ export class RegistroMantenimientoComponent {
   ];
 
   // =========================
+  // Mock de solicitudes
+  // =========================
+  solicitudesMock: SolicitudMock[] = [
+    {
+      id: 1,
+      folio: 'SM-0001',
+      unidadId: 1,
+      tipoServicio: 'Correctivo',
+      prioridad: 'Alta',
+      kilometraje: 120345,
+      observaciones: 'Se detecta ruido en frenos delanteros y vibración al frenar.',
+    },
+    {
+      id: 2,
+      folio: 'SM-0002',
+      unidadId: 2,
+      tipoServicio: 'Preventivo',
+      prioridad: 'Media',
+      kilometraje: 98500,
+      observaciones: 'Solicitud de servicio preventivo general por kilometraje.',
+    },
+    {
+      id: 3,
+      folio: 'SM-0003',
+      unidadId: 3,
+      tipoServicio: 'Correctivo',
+      prioridad: 'Crítica',
+      kilometraje: 143220,
+      observaciones: 'La unidad presenta fuga de aceite visible en patio.',
+    },
+  ];
+
+  // =========================
+  // Control interno de flujo
+  // =========================
+  modo: ModoRegistroMantenimiento = 'directo';
+  solicitudId: number | null = null;
+  origenMantenimiento: OrigenMantenimiento = 'DIRECTO';
+  folioSolicitud: string | null = null;
+
+  // =========================
   // Formulario
   // =========================
   noOrden = '';
   fecha = '';
+  fechaSiguienteMantenimiento = '';
   horasTecnico: number | null = null;
 
   unidadId: number | null = null;
@@ -75,6 +129,7 @@ export class RegistroMantenimientoComponent {
   nivelServicio: ServicioNivel = 'Servicio menor';
 
   tecnicos = '';
+  observaciones = '';
 
   checklist: Record<ChecklistKey, boolean> = {
     RevisionNiveles: false,
@@ -97,12 +152,53 @@ export class RegistroMantenimientoComponent {
 
   touched = {
     fecha: false,
+    fechaSiguiente: false,
     unidad: false,
     kilometraje: false,
     tecnicos: false,
+    otroTexto: false,
   };
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
+
+  ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      const modoParam = params.get('modo');
+      const solicitudIdParam = params.get('solicitudId');
+
+      if (modoParam === 'solicitud' && solicitudIdParam) {
+        const id = Number(solicitudIdParam);
+
+        if (!isNaN(id)) {
+          this.modo = 'solicitud';
+          this.solicitudId = id;
+          this.origenMantenimiento = 'SOLICITUD';
+          this.precargarDesdeSolicitud(id);
+          return;
+        }
+      }
+
+      this.modo = 'directo';
+      this.solicitudId = null;
+      this.origenMantenimiento = 'DIRECTO';
+      this.folioSolicitud = null;
+    });
+  }
+
+  private precargarDesdeSolicitud(id: number): void {
+    const solicitud = this.solicitudesMock.find((s) => s.id === id);
+
+    if (!solicitud) return;
+
+    this.folioSolicitud = solicitud.folio;
+    this.unidadId = solicitud.unidadId;
+    this.tipoServicio = solicitud.tipoServicio;
+    this.kilometraje = solicitud.kilometraje;
+    this.observaciones = solicitud.observaciones;
+  }
 
   // =========================
   // Helpers materiales
@@ -173,11 +269,17 @@ export class RegistroMantenimientoComponent {
 
   private isValid(): boolean {
     this.touched.fecha = true;
+    this.touched.fechaSiguiente = true;
     this.touched.unidad = true;
     this.touched.kilometraje = true;
     this.touched.tecnicos = true;
 
+    if (this.checklist.Otro) {
+      this.touched.otroTexto = true;
+    }
+
     const okFecha = !!this.fecha;
+    const okFechaSiguiente = !!this.fechaSiguienteMantenimiento;
     const okUnidad = this.unidadId !== null;
     const okKm = this.kilometraje !== null && this.kilometraje >= 0;
     const okTec = this.tecnicos.trim().length > 0;
@@ -186,7 +288,7 @@ export class RegistroMantenimientoComponent {
       !this.checklist.Otro ||
       this.otroTexto.trim().length > 0;
 
-    return okFecha && okUnidad && okKm && okTec && okOtro;
+    return okFecha && okFechaSiguiente && okUnidad && okKm && okTec && okOtro;
   }
 
   // =========================
@@ -198,18 +300,17 @@ export class RegistroMantenimientoComponent {
   }
 
   // =========================
-  // Guardar (payload limpio)
+  // Guardar
   // =========================
 
   onGuardar(): void {
-
     if (!this.isValid()) return;
 
     const payload = {
-
       cabecera: {
-        noOrden: this.noOrden || null,
+        noOrden: this.noOrden.trim() || null,
         fecha: this.fecha,
+        fechaSiguienteMantenimiento: this.fechaSiguienteMantenimiento,
         horasTecnico: this.horasTecnico,
         unidadId: this.unidadId,
         tipoServicio: this.tipoServicio,
@@ -217,9 +318,14 @@ export class RegistroMantenimientoComponent {
         estatus: this.estatus,
         nivelServicio: this.nivelServicio,
         tecnicosTexto: this.tecnicos.trim(),
+        observaciones: this.observaciones.trim() || null,
+        origenMantenimiento: this.origenMantenimiento,
+        solicitudId: this.solicitudId,
         checklist: this.checklist,
         otroTexto: this.checklist.Otro ? this.otroTexto.trim() : null,
         manoObra: this.manoObra ?? 0,
+        totalMateriales: this.totalMateriales(),
+        totalFinalServicio: this.totalFinal(),
       },
 
       detalles: this.materiales
@@ -228,13 +334,11 @@ export class RegistroMantenimientoComponent {
           articuloId: m.catalogoId,
           cantidad: m.cantidad,
           precioUnitarioAplicado: m.precioUnitario,
+          subtotal: this.materialSubtotal(m),
         }))
     };
 
     console.log('Payload mantenimiento:', payload);
-
-    // cuando exista backend:
-    // this.api.createMantenimiento(payload)
 
     this.router.navigate(['/mantenimientos']);
   }

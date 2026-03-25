@@ -6,7 +6,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
 
-type ModuloKey = 'usuarios' | 'roles' | 'vehiculos' | 'inventario' | 'mantenimientos';
+type ModuloKey =
+  | 'usuarios'
+  | 'roles'
+  | 'vehiculos'
+  | 'inventario'
+  | 'mantenimientos'
+  | 'proveedores';
 
 interface PermisoDef {
   code: string;
@@ -84,6 +90,7 @@ export class RegistroRolComponent implements OnInit {
         'vehiculos.ver', 'vehiculos.crear', 'vehiculos.editar', 'vehiculos.eliminar', 'vehiculos.documentos.cargar',
         'inventario.ver', 'inventario.crear', 'inventario.editar', 'inventario.eliminar',
         'mantenimientos.ver', 'mantenimientos.crear', 'mantenimientos.editar', 'mantenimientos.aprobar', 'mantenimientos.cerrar',
+        'proveedores.ver', 'proveedores.crear', 'proveedores.editar', 'proveedores.eliminar',
       ],
       activo: true,
     },
@@ -99,6 +106,7 @@ export class RegistroRolComponent implements OnInit {
         'mantenimientos.ver',
         'mantenimientos.crear',
         'mantenimientos.aprobar',
+        'proveedores.ver',
       ],
       activo: true,
     },
@@ -112,6 +120,7 @@ export class RegistroRolComponent implements OnInit {
         'vehiculos.ver',
         'inventario.ver',
         'mantenimientos.ver',
+        'proveedores.ver',
       ],
       activo: true,
     },
@@ -178,6 +187,17 @@ export class RegistroRolComponent implements OnInit {
         { code: 'mantenimientos.cerrar', label: 'Cerrar', help: 'Finalizar mantenimientos (Taller).' },
       ],
     },
+    {
+      key: 'proveedores',
+      titulo: 'Proveedores',
+      descripcion: 'Gestión y administración de proveedores.',
+      permisos: [
+        { code: 'proveedores.ver', label: 'Ver', help: 'Consultar listado y detalle.' },
+        { code: 'proveedores.crear', label: 'Crear', help: 'Registrar nuevos proveedores.' },
+        { code: 'proveedores.editar', label: 'Editar', help: 'Modificar información de proveedores.' },
+        { code: 'proveedores.eliminar', label: 'Eliminar', help: 'Eliminar/dar de baja proveedores.' },
+      ],
+    },
   ];
 
   // =========================
@@ -234,7 +254,6 @@ export class RegistroRolComponent implements OnInit {
     const found = this.rolesMock.find((r) => r.id === id);
 
     if (!found) {
-      // Si no existe, regresamos al listado para evitar pantalla rara
       this.router.navigate(['/usuarios/roles']);
       return;
     }
@@ -251,7 +270,6 @@ export class RegistroRolComponent implements OnInit {
 
     this.isSystemAdminRole = this.isAdminNombre(found.nombre);
 
-    // Regla: Administrador siempre activo
     if (this.isSystemAdminRole) {
       this.form.activo = true;
     }
@@ -299,10 +317,8 @@ export class RegistroRolComponent implements OnInit {
   onGuardar(): void {
     this.submitted = true;
 
-    // Validación mínima
     if (!this.form.nombre || !this.form.nombre.trim()) return;
 
-    // Regla: si es Admin, no permitir desactivar
     if (this.isSystemAdminRole) {
       this.form.activo = true;
     }
@@ -316,7 +332,6 @@ export class RegistroRolComponent implements OnInit {
 
     console.log('[RegistroRol] Guardar:', payload);
 
-    // Por ahora no persistimos (sin backend). Regresamos al listado.
     this.router.navigate(['/usuarios/roles']);
   }
 }

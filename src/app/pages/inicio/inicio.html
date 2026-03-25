@@ -2,7 +2,6 @@
 
 <main class="pt-20 min-h-screen bg-gray-50">
   <div class="max-w-screen-xl mx-auto p-6">
-    
     <h1 class="text-2xl font-bold text-gray-900 mb-4">
       Bienvenido a Robledo FleetOps
     </h1>
@@ -11,23 +10,208 @@
       Panel principal del sistema. Aquí se mostrarán avisos, métricas y accesos rápidos.
     </p>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-        <h2 class="font-semibold text-gray-900 mb-2">Vehículos</h2>
-        <p class="text-sm text-gray-600">Gestión y estado de la flota.</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+      <div class="rounded-2xl bg-slate-900 p-6 shadow-lg border border-slate-800 text-white">
+        <div class="mb-5">
+          <div>
+            <p class="text-sm text-slate-400 mb-1">Total mantenimientos</p>
+            <h2 class="text-2xl font-bold text-red-400">
+              ${{ totalMantenimientoSemana | number:'1.0-0' }}
+            </h2>
+          </div>
+        </div>
+
+        <p class="text-slate-300 text-sm mb-4">
+          Gastos semanales en mantenimientos de unidades.
+        </p>
+
+        <div class="mb-3 flex flex-wrap items-center gap-5 text-sm">
+          <div class="flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-red-500"></span>
+            <span class="text-slate-300">Gasto en mantenimiento</span>
+          </div>
+        </div>
+
+        <apx-chart
+          #maintenanceChart
+          [series]="maintenanceChartOptions.series!"
+          [chart]="maintenanceChartOptions.chart!"
+          [stroke]="maintenanceChartOptions.stroke!"
+          [dataLabels]="maintenanceChartOptions.dataLabels!"
+          [xaxis]="maintenanceChartOptions.xaxis!"
+          [yaxis]="maintenanceChartOptions.yaxis!"
+          [grid]="maintenanceChartOptions.grid!"
+          [tooltip]="maintenanceChartOptions.tooltip!"
+          [legend]="maintenanceChartOptions.legend!"
+          [fill]="maintenanceChartOptions.fill!"
+          [colors]="maintenanceChartOptions.colors!"
+          [markers]="maintenanceChartOptions.markers!"
+        ></apx-chart>
+
+        <div class="grid grid-cols-1 items-center border-t border-slate-800 justify-between">
+          <div class="flex justify-between items-center pt-4 md:pt-6 gap-4">
+            <div class="flex items-center gap-3">
+              <label for="semanaMantenimiento" class="text-sm font-medium text-slate-300">
+                Semana:
+              </label>
+
+              <select
+                id="semanaMantenimiento"
+                class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 outline-none focus:border-blue-500"
+                [ngModel]="selectedMaintenanceWeekKey"
+                (ngModelChange)="onMaintenanceWeekChange($event)"
+              >
+                <option *ngFor="let week of maintenanceWeeks" [ngValue]="week.key">
+                  {{ week.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-        <h2 class="font-semibold text-gray-900 mb-2">Inventario</h2>
-        <p class="text-sm text-gray-600">Refacciones y almacén.</p>
+      <div class="rounded-2xl bg-slate-900 p-6 shadow-lg border border-slate-800 text-white">
+        <div class="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p class="text-sm text-slate-400 mb-1">Total entradas</p>
+            <h2 class="text-2xl font-bold text-emerald-400">
+              ${{ totalEntradasSemana | number:'1.0-0' }}
+            </h2>
+          </div>
+
+          <div class="text-right">
+            <p class="text-sm text-slate-400 mb-1">Total salidas</p>
+            <h2 class="text-2xl font-bold text-red-400">
+              ${{ totalSalidasSemana | number:'1.0-0' }}
+            </h2>
+          </div>
+        </div>
+
+        <p class="text-slate-300 text-sm mb-4">
+          Costos de entradas y salidas en inventario por semana.
+        </p>
+
+        <div class="mb-3 flex flex-wrap items-center gap-5 text-sm">
+          <div class="flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-emerald-500"></span>
+            <span class="text-slate-300">Entradas</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-red-500"></span>
+            <span class="text-slate-300">Salidas</span>
+          </div>
+        </div>
+
+        <apx-chart
+          #inventoryChart
+          [series]="inventoryChartOptions.series!"
+          [chart]="inventoryChartOptions.chart!"
+          [stroke]="inventoryChartOptions.stroke!"
+          [dataLabels]="inventoryChartOptions.dataLabels!"
+          [xaxis]="inventoryChartOptions.xaxis!"
+          [yaxis]="inventoryChartOptions.yaxis!"
+          [grid]="inventoryChartOptions.grid!"
+          [tooltip]="inventoryChartOptions.tooltip!"
+          [legend]="inventoryChartOptions.legend!"
+          [fill]="inventoryChartOptions.fill!"
+          [colors]="inventoryChartOptions.colors!"
+          [markers]="inventoryChartOptions.markers!"
+        ></apx-chart>
+
+        <div class="grid grid-cols-1 items-center border-t border-slate-800 justify-between">
+          <div class="flex justify-between items-center pt-4 md:pt-6 gap-4">
+            <div class="flex items-center gap-3">
+              <label for="semanaInventario" class="text-sm font-medium text-slate-300">
+                Semana:
+              </label>
+
+              <select
+                id="semanaInventario"
+                class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 outline-none focus:border-blue-500"
+                [ngModel]="selectedWeekKey"
+                (ngModelChange)="onWeekChange($event)"
+              >
+                <option *ngFor="let week of inventoryWeeks" [ngValue]="week.key">
+                  {{ week.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-        <h2 class="font-semibold text-gray-900 mb-2">Usuarios</h2>
-        <p class="text-sm text-gray-600">Control de accesos y roles.</p>
+      <div class="rounded-2xl bg-slate-900 p-6 shadow-lg border border-slate-800 text-white">
+        <div class="mb-4">
+          <h2 class="font-semibold text-white text-lg">Disponibilidad de flota</h2>
+          <p class="text-sm text-slate-300">
+            Visualización general del estado actual de las unidades.
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-700 bg-slate-800/80 p-3 mb-4">
+          <div class="grid grid-cols-3 gap-3">
+            <div class="rounded-xl border border-green-700 bg-green-900/30 p-3 text-center">
+              <div
+                class="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-green-800 text-green-300 font-bold text-sm">
+                {{ vehiculosDisponibles }}
+              </div>
+              <p class="text-sm font-semibold text-green-400">Disponible</p>
+            </div>
+
+            <div class="rounded-xl border border-blue-700 bg-blue-900/30 p-3 text-center">
+              <div
+                class="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-blue-800 text-blue-300 font-bold text-sm">
+                {{ vehiculosEnUso }}
+              </div>
+              <p class="text-sm font-semibold text-blue-400">En uso</p>
+            </div>
+
+            <div class="rounded-xl border border-orange-700 bg-orange-900/30 p-3 text-center">
+              <div
+                class="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-orange-800 text-orange-300 font-bold text-sm">
+                {{ vehiculosEnTaller }}
+              </div>
+              <p class="text-sm font-semibold text-orange-400">En taller</p>
+            </div>
+          </div>
+
+          <div class="mt-3 flex items-center justify-between text-sm">
+            <span class="text-slate-300">Total de unidades:</span>
+            <span class="font-semibold text-white">{{ totalVehiculos }}</span>
+          </div>
+        </div>
+
+        <apx-chart
+          #fleetChart
+          [series]="chartOptions.series!"
+          [chart]="chartOptions.chart!"
+          [plotOptions]="chartOptions.plotOptions!"
+          [labels]="chartOptions.labels!"
+          [colors]="chartOptions.colors!"
+          [stroke]="chartOptions.stroke!"
+          [tooltip]="chartOptions.tooltip!"
+          [responsive]="chartOptions.responsive!"
+        ></apx-chart>
+
+        <div class="mt-1 flex flex-wrap items-center justify-center gap-6 text-sm">
+          <div class="flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-green-500"></span>
+            <span class="text-slate-300">Disponible</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-blue-500"></span>
+            <span class="text-slate-300">En uso</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-orange-500"></span>
+            <span class="text-slate-300">En taller</span>
+          </div>
+        </div>
       </div>
     </div>
-
   </div>
 </main>
 

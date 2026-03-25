@@ -1,0 +1,259 @@
+<app-cabecera></app-cabecera>
+
+<main class="min-h-screen bg-slate-50 pt-24 pb-10">
+  <div class="mx-auto w-full max-w-screen-xl px-4">
+
+    <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Solicitudes de mantenimiento</h1>
+        <p class="text-sm text-slate-500">
+          Revisión, seguimiento y autorización de solicitudes de mantenimiento.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="shrink-0 inline-flex items-center gap-2
+                 text-white bg-gradient-to-r from-slate-600 via-slate-700 to-slate-800
+                 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-slate-300
+                 font-semibold rounded-full text-sm px-5 py-2.5
+                 text-center leading-5 shadow transition active:scale-[0.98]"
+          (click)="onVolver()"
+        >
+          Regresar
+        </button>
+
+        <button
+          type="button"
+          class="shrink-0 inline-flex items-center gap-2
+                 text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
+                 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
+                 font-semibold rounded-full text-sm px-5 py-2.5
+                 text-center leading-5 shadow transition active:scale-[0.98]"
+          (click)="onNuevaSolicitud()"
+        >
+          <span class="text-base leading-none">+</span>
+          Nueva solicitud
+        </button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <p class="text-sm text-slate-500">Total solicitudes</p>
+        <p class="mt-2 text-2xl font-bold text-slate-900">{{ solicitudesFiltradas.length }}</p>
+      </div>
+
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+        <p class="text-sm text-amber-700">Pendientes</p>
+        <p class="mt-2 text-2xl font-bold text-amber-800">{{ totalPendientes() }}</p>
+      </div>
+
+      <div class="rounded-2xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
+        <p class="text-sm text-blue-700">Aprobadas</p>
+        <p class="mt-2 text-2xl font-bold text-blue-800">{{ totalAprobadas() }}</p>
+      </div>
+
+      <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+        <p class="text-sm text-emerald-700">Finalizadas</p>
+        <p class="mt-2 text-2xl font-bold text-emerald-800">{{ totalFinalizadas() }}</p>
+      </div>
+
+      <div class="rounded-2xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
+        <p class="text-sm text-rose-700">Rechazadas / canceladas</p>
+        <p class="mt-2 text-2xl font-bold text-rose-800">{{ totalNoProcedentes() }}</p>
+      </div>
+    </div>
+
+    <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Buscar</label>
+          <input
+            type="text"
+            class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                   placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
+            placeholder="Buscar por folio, unidad, observaciones o solicitante..."
+            [(ngModel)]="search"
+            (ngModelChange)="applyFilters()"
+            name="search"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Estado</label>
+          <select
+            class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                   focus:border-blue-500 focus:ring-blue-500"
+            [(ngModel)]="filtroEstado"
+            (ngModelChange)="applyFilters()"
+            name="filtroEstado"
+          >
+            <option value="">Todos</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Aprobada">Aprobada</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Finalizada">Finalizada</option>
+            <option value="Rechazada">Rechazada</option>
+            <option value="Cancelada">Cancelada</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Prioridad</label>
+          <select
+            class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                   focus:border-blue-500 focus:ring-blue-500"
+            [(ngModel)]="filtroPrioridad"
+            (ngModelChange)="applyFilters()"
+            name="filtroPrioridad"
+          >
+            <option value="">Todas</option>
+            <option value="Baja">Baja</option>
+            <option value="Media">Media</option>
+            <option value="Alta">Alta</option>
+            <option value="Crítica">Crítica</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-gray-700">
+          <thead class="bg-gray-50 text-xs uppercase text-gray-600">
+            <tr>
+              <th class="px-6 py-4">Folio</th>
+              <th class="px-6 py-4">Fecha</th>
+              <th class="px-6 py-4">Unidad</th>
+              <th class="px-6 py-4">Tipo</th>
+              <th class="px-6 py-4">Prioridad</th>
+              <th class="px-6 py-4">Solicitó</th>
+              <th class="px-6 py-4">Estado</th>
+              <th class="px-6 py-4">Observaciones</th>
+              <th class="px-6 py-4 text-right">Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr
+              *ngFor="let s of solicitudesFiltradas"
+              class="border-t border-gray-100 align-top hover:bg-slate-50/70"
+            >
+              <td class="px-6 py-4 font-semibold text-slate-900">
+                {{ s.folio }}
+              </td>
+
+              <td class="px-6 py-4 whitespace-nowrap">
+                {{ s.fechaSolicitud }}
+              </td>
+
+              <td class="px-6 py-4">
+                <div class="font-medium text-slate-900">{{ s.unidadNombre }}</div>
+                <div class="text-xs text-slate-500" *ngIf="s.placa">{{ s.placa }}</div>
+              </td>
+
+              <td class="px-6 py-4">
+                {{ s.tipoServicio }}
+              </td>
+
+              <td class="px-6 py-4">
+                <span
+                  class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                  [ngClass]="getPrioridadClass(s.prioridad)"
+                >
+                  {{ s.prioridad }}
+                </span>
+              </td>
+
+              <td class="px-6 py-4">
+                {{ s.solicitadoPor }}
+              </td>
+
+              <td class="px-6 py-4">
+                <span
+                  class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                  [ngClass]="getEstadoClass(s.estado)"
+                >
+                  {{ s.estado }}
+                </span>
+              </td>
+
+              <td class="px-6 py-4">
+                <div class="max-w-[280px] whitespace-normal text-sm text-slate-600">
+                  {{ s.observaciones || 'Sin observaciones' }}
+                </div>
+                <div class="mt-1 text-xs text-slate-400" *ngIf="s.kilometraje !== null">
+                  Kilometraje: {{ s.kilometraje | number:'1.0-0' }}
+                </div>
+              </td>
+
+              <td class="px-6 py-4">
+                <div class="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    class="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                    (click)="onVerDetalle(s)"
+                  >
+                    Ver
+                  </button>
+
+                  <button
+                    *ngIf="s.estado === 'Pendiente'"
+                    type="button"
+                    class="rounded-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
+                    (click)="onAprobar(s)"
+                  >
+                    Aprobar
+                  </button>
+
+                  <button
+                    *ngIf="s.estado === 'Pendiente' || s.estado === 'Aprobada'"
+                    type="button"
+                    class="rounded-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
+                    (click)="onContinuarRegistro(s)"
+                  >
+                    Continuar registro
+                  </button>
+
+                  <button
+                    *ngIf="s.estado === 'Pendiente'"
+                    type="button"
+                    class="rounded-full bg-gradient-to-r from-rose-500 via-rose-600 to-rose-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
+                    (click)="onRechazar(s)"
+                  >
+                    Rechazar
+                  </button>
+
+                  <button
+                    *ngIf="s.estado !== 'Finalizada' && s.estado !== 'Cancelada' && s.estado !== 'Rechazada'"
+                    type="button"
+                    class="rounded-full bg-gradient-to-r from-slate-500 via-slate-600 to-slate-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
+                    (click)="onCancelarSolicitud(s)"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngIf="solicitudesFiltradas.length === 0">
+              <td colspan="9" class="px-6 py-10 text-center text-sm text-slate-500">
+                No se encontraron solicitudes con los filtros seleccionados.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-xs text-gray-600">
+        <span>Robledo FleetOps</span>
+        <span class="text-gray-400">Mantenimientos / Solicitudes</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<app-footer></app-footer>

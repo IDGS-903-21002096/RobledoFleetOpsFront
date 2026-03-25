@@ -10,7 +10,10 @@ import { InventarioComponent } from './pages/inventario/inventario';
 import { RolesComponent } from './pages/usuarios/roles/roles';
 import { TiposComponent } from './pages/vehiculos/tipos/tipos';
 import { GruposComponent } from './pages/inventario/grupos/grupos';
+
 import { MantenimientosComponent } from './pages/mantenimientos/mantenimientos';
+import { SolicitudesMantenimientoComponent } from './pages/mantenimientos/solicitudes-mantenimiento/solicitudes-mantenimiento';
+import { RegistroSolicitudMantenimientoComponent } from './pages/mantenimientos/registro-solicitud-mantenimiento/registro-solicitud-mantenimiento';
 
 import { RegistroUsuarioComponent } from './pages/usuarios/registro-usuario/registro-usuario';
 import { RegistroVehiculo } from './pages/vehiculos/registro-vehiculo/registro-vehiculo';
@@ -56,6 +59,8 @@ export const routes: Routes = [
   { path: 'mantenimientos', component: MantenimientosComponent },
   { path: 'mantenimientos/registro', component: RegistroMantenimientoComponent },
   { path: 'mantenimientos/recordatorios', component: RecordatoriosComponent },
+  { path: 'mantenimientos/solicitudes', component: SolicitudesMantenimientoComponent },
+  { path: 'mantenimientos/solicitudes/nueva', component: RegistroSolicitudMantenimientoComponent },
 
   { path: 'usuarios', component: UsuariosComponent },
   { path: 'usuarios/nuevo', component: RegistroUsuarioComponent },

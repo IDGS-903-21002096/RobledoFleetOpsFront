@@ -15,12 +15,14 @@ type DocumentoItem = {
   tipo: string;
   archivo: File | null;
   notas: string;
+  vencimientoPoliza: string;
   estado: EstadoDoc;
   progreso: number;
   dataUrl: string | null;
   mimeType: string | null;
   touchedNombre: boolean;
   touchedArchivo: boolean;
+  touchedVencimientoPoliza: boolean;
   errorArchivo: string | null;
 };
 
@@ -30,6 +32,7 @@ type HistorialDoc = {
   tipo?: string;
   archivoNombre: string;
   fecha: string;
+  vencimientoPoliza?: string;
   dataUrl: string;
   mimeType: string;
 };
@@ -85,6 +88,7 @@ export class VehiculoDocumentosComponent {
       tipo: '',
       archivo: null,
       notas: '',
+      vencimientoPoliza: '',
       estado: 'PENDIENTE',
       progreso: 0,
 
@@ -93,6 +97,7 @@ export class VehiculoDocumentosComponent {
 
       touchedNombre: false,
       touchedArchivo: false,
+      touchedVencimientoPoliza: false,
       errorArchivo: null,
     };
 
@@ -101,6 +106,16 @@ export class VehiculoDocumentosComponent {
 
   removeDocumento(index: number): void {
     this.documentos = this.documentos.filter((_, i) => i !== index);
+  }
+
+  isTipoPoliza(tipo: string): boolean {
+    return tipo === 'Póliza de seguro';
+  }
+
+  isValidVencimientoPoliza(value: string): boolean {
+    if (!value) return false;
+    const fecha = new Date(value);
+    return !Number.isNaN(fecha.getTime());
   }
 
   async onFileChange(event: Event, doc: DocumentoItem): Promise<void> {
@@ -245,7 +260,13 @@ export class VehiculoDocumentosComponent {
   }
 
   isValidItem(d: DocumentoItem): boolean {
-    return this.isValidNombreDoc(d.nombre) && this.isValidArchivo(d);
+    const nombreValido = this.isValidNombreDoc(d.nombre);
+    const archivoValido = this.isValidArchivo(d);
+    const vencimientoValido = this.isTipoPoliza(d.tipo)
+      ? this.isValidVencimientoPoliza(d.vencimientoPoliza)
+      : true;
+
+    return nombreValido && archivoValido && vencimientoValido;
   }
 
   isValidForm(): boolean {
@@ -268,6 +289,7 @@ export class VehiculoDocumentosComponent {
       ...d,
       touchedNombre: true,
       touchedArchivo: true,
+      touchedVencimientoPoliza: this.isTipoPoliza(d.tipo) ? true : d.touchedVencimientoPoliza,
     }));
 
     if (!this.isValidForm()) return;
@@ -284,6 +306,7 @@ export class VehiculoDocumentosComponent {
       tipo: d.tipo || undefined,
       archivoNombre: d.archivo?.name ?? '—',
       fecha: dateStr,
+      vencimientoPoliza: this.isTipoPoliza(d.tipo) ? d.vencimientoPoliza : undefined,
       dataUrl: d.dataUrl ?? '',
       mimeType: d.mimeType ?? '',
     }));

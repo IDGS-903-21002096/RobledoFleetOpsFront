@@ -6,6 +6,21 @@
       <div>
         <h1 class="text-2xl font-bold text-slate-900">Registro de mantenimiento</h1>
         <p class="text-sm text-slate-500">Captura de orden de servicio, materiales y costos.</p>
+
+        <div
+          *ngIf="modo === 'solicitud'"
+          class="mt-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-medium text-blue-700"
+        >
+          <span>Origen: Solicitud de mantenimiento</span>
+          <span *ngIf="folioSolicitud" class="text-blue-500">• {{ folioSolicitud }}</span>
+        </div>
+
+        <div
+          *ngIf="modo === 'directo'"
+          class="mt-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-700"
+        >
+          <span>Origen: Registro directo</span>
+        </div>
       </div>
 
       <div class="flex items-center gap-2">
@@ -28,7 +43,7 @@
 
         <h2 class="text-sm font-semibold text-slate-900 mb-4">Datos principales</h2>
 
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">No. de orden (opcional)</label>
             <input
@@ -56,6 +71,22 @@
           </div>
 
           <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Fecha del siguiente mantenimiento *</label>
+            <input
+              type="date"
+              class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
+                     focus:ring-blue-500 focus:border-blue-500"
+              [ngClass]="touched.fechaSiguiente && !fechaSiguienteMantenimiento ? 'border-red-300' : 'border-gray-300'"
+              [(ngModel)]="fechaSiguienteMantenimiento"
+              name="fechaSiguienteMantenimiento"
+              (blur)="touched.fechaSiguiente = true"
+            />
+            <p *ngIf="touched.fechaSiguiente && !fechaSiguienteMantenimiento" class="mt-1 text-xs text-red-600">
+              La fecha del siguiente mantenimiento es obligatoria.
+            </p>
+          </div>
+
+          <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Horas usadas por el técnico</label>
             <input
               type="number"
@@ -69,7 +100,7 @@
             />
           </div>
 
-          <div class="md:col-span-2">
+          <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Unidad *</label>
             <select
               class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
@@ -146,14 +177,14 @@
             </select>
           </div>
 
-          <div class="md:col-span-2">
+          <div class="xl:col-span-2">
             <label class="block text-sm font-medium text-slate-700 mb-1">Nombre del técnico(s) *</label>
             <input
               type="text"
               class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
                      focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
               [ngClass]="touched.tecnicos && tecnicos.trim().length === 0 ? 'border-red-300' : 'border-gray-300'"
-              placeholder="Ej. Juan Pérez, Luis Gómez"
+              placeholder="Ej. Juan Pérez, Carlos Herández"
               [(ngModel)]="tecnicos"
               name="tecnicos"
               (blur)="touched.tecnicos = true"
@@ -161,6 +192,18 @@
             <p *ngIf="touched.tecnicos && tecnicos.trim().length === 0" class="mt-1 text-xs text-red-600">
               Captura el nombre del técnico o técnicos.
             </p>
+          </div>
+
+          <div class="md:col-span-2 xl:col-span-4">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
+            <textarea
+              rows="4"
+              class="block w-full p-4 bg-white border border-gray-300 text-gray-900 text-sm rounded-2xl shadow-sm
+                     focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400 resize-none"
+              placeholder="Describe observaciones generales del mantenimiento..."
+              [(ngModel)]="observaciones"
+              name="observaciones"
+            ></textarea>
           </div>
         </div>
 
@@ -215,12 +258,13 @@
                 type="text"
                 class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
                        focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
-                [ngClass]="checklist.Otro && touched.tecnicos && otroTexto.trim().length === 0 ? 'border-red-300' : 'border-gray-300'"
+                [ngClass]="checklist.Otro && touched.otroTexto && otroTexto.trim().length === 0 ? 'border-red-300' : 'border-gray-300'"
                 placeholder="Describe la observación..."
                 [(ngModel)]="otroTexto"
                 name="otroTexto"
+                (blur)="touched.otroTexto = true"
               />
-              <p *ngIf="checklist.Otro && otroTexto.trim().length === 0" class="mt-1 text-xs text-red-600">
+              <p *ngIf="checklist.Otro && touched.otroTexto && otroTexto.trim().length === 0" class="mt-1 text-xs text-red-600">
                 Captura la observación de “Otro”.
               </p>
             </div>

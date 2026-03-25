@@ -439,6 +439,42 @@
 
             <div>
               <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
+                  'text-green-700': divisionTouched && hasSelection(model.division) && isValidDivision(model.division),
+                  'text-red-700': divisionTouched && hasSelection(model.division) && !isValidDivision(model.division),
+                  'text-gray-700': !divisionTouched || (divisionTouched && !hasSelection(model.division))
+                }">
+                División
+              </label>
+
+              <select
+                name="division"
+                [(ngModel)]="model.division"
+                (blur)="divisionTouched = true"
+                class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
+                [ngClass]="{
+                  'bg-green-50 border border-green-300 text-green-700 focus:ring-green-500 focus:border-green-500':
+                    divisionTouched && hasSelection(model.division) && isValidDivision(model.division),
+                  'bg-red-50 border border-red-300 text-red-700 focus:ring-red-500 focus:border-red-500':
+                    divisionTouched && hasSelection(model.division) && !isValidDivision(model.division),
+                  'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
+                    !divisionTouched || (divisionTouched && !hasSelection(model.division))
+                }"
+              >
+                <option value="" disabled>Selecciona una división</option>
+                <option *ngFor="let d of divisionesVehiculo" [value]="d">{{ d }}</option>
+              </select>
+
+              <p *ngIf="divisionTouched && hasSelection(model.division) && !isValidDivision(model.division)" class="mt-2.5 text-sm text-red-700">
+                <span class="font-medium">Oh, snap!</span> Selecciona una división válida.
+              </p>
+
+              <p *ngIf="divisionTouched && hasSelection(model.division) && isValidDivision(model.division)" class="mt-2.5 text-sm text-green-700">
+                <span class="font-medium">Bien hecho.</span> División seleccionada.
+              </p>
+            </div>
+
+            <div>
+              <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
                   'text-green-700': serieTouched && hasText(model.numeroSerie) && isValidSerie(model.numeroSerie),
                   'text-red-700': serieTouched && hasText(model.numeroSerie) && !isValidSerie(model.numeroSerie),
                   'text-gray-700': !serieTouched || (serieTouched && !hasText(model.numeroSerie))
@@ -611,40 +647,6 @@
 
               <p *ngIf="polizaTouched && hasText(model.polizaSeguro) && isValidPoliza(model.polizaSeguro)" class="mt-2.5 text-sm text-green-700">
                 <span class="font-medium">Bien hecho.</span> Póliza válida.
-              </p>
-            </div>
-
-            <div>
-              <label class="block mb-2.5 text-sm font-medium" [ngClass]="{
-                  'text-green-700': vigenciaTouched && hasSelection(model.vigenciaPoliza) && isValidVigencia(model.vigenciaPoliza),
-                  'text-red-700': vigenciaTouched && hasSelection(model.vigenciaPoliza) && !isValidVigencia(model.vigenciaPoliza),
-                  'text-gray-700': !vigenciaTouched || (vigenciaTouched && !hasSelection(model.vigenciaPoliza))
-                }">
-                Vigencia de póliza
-              </label>
-
-              <input
-                type="date"
-                name="vigenciaPoliza"
-                [(ngModel)]="model.vigenciaPoliza"
-                (blur)="vigenciaTouched = true"
-                class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
-                [ngClass]="{
-                  'bg-green-50 border border-green-300 text-green-700 focus:ring-green-500 focus:border-green-500':
-                    vigenciaTouched && hasSelection(model.vigenciaPoliza) && isValidVigencia(model.vigenciaPoliza),
-                  'bg-red-50 border border-red-300 text-red-700 focus:ring-red-500 focus:border-red-500':
-                    vigenciaTouched && hasSelection(model.vigenciaPoliza) && !isValidVigencia(model.vigenciaPoliza),
-                  'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
-                    !vigenciaTouched || (vigenciaTouched && !hasSelection(model.vigenciaPoliza))
-                }"
-              />
-
-              <p *ngIf="vigenciaTouched && hasSelection(model.vigenciaPoliza) && !isValidVigencia(model.vigenciaPoliza)" class="mt-2.5 text-sm text-red-700">
-                <span class="font-medium">Oh, snap!</span> Verifica la vigencia.
-              </p>
-
-              <p *ngIf="vigenciaTouched && hasSelection(model.vigenciaPoliza) && isValidVigencia(model.vigenciaPoliza)" class="mt-2.5 text-sm text-green-700">
-                <span class="font-medium">Bien hecho.</span> Fecha válida.
               </p>
             </div>
 
