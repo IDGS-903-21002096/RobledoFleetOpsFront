@@ -1,23 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import {
+  GuardarTipoVehiculoRequest,
+  TipoVehiculo,
+  TiposVehiculoService
+} from '../../../../services/tipos-vehiculo.service';
 
 interface TipoForm {
   id: number | null;
   nombre: string;
   descripcion: string;
-  activo: boolean;
-}
-
-interface TipoMock {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  enUso: number;
   activo: boolean;
 }
 
@@ -29,13 +26,16 @@ interface TipoMock {
   styleUrl: './registro-tipo.scss',
 })
 export class RegistroTipoComponent implements OnInit {
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router
-  ) {}
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private tiposVehiculoService = inject(TiposVehiculoService);
 
   isEditMode: boolean = false;
   submitted: boolean = false;
+
+  loading: boolean = false;
+  saving: boolean = false;
+  errorMessage: string = '';
 
   form: TipoForm = {
     id: null,
@@ -43,15 +43,6 @@ export class RegistroTipoComponent implements OnInit {
     descripcion: '',
     activo: true,
   };
-
-  private tiposMock: TipoMock[] = [
-    { id: 1, nombre: 'Automóvil', descripcion: 'Vehículo ligero.', enUso: 10, activo: true },
-    { id: 2, nombre: 'Camioneta', descripcion: 'Unidades tipo pickup/van.', enUso: 7, activo: true },
-    { id: 3, nombre: 'Autobús', descripcion: 'Transporte de personal.', enUso: 24, activo: true },
-    { id: 4, nombre: 'Camión', descripcion: 'Carga ligera/mediana.', enUso: 3, activo: true },
-    { id: 5, nombre: 'Van', descripcion: 'Unidades van.', enUso: 26, activo: true },
-    { id: 6, nombre: 'Tráiler', descripcion: 'Unidad articulada.', enUso: 12, activo: true },
-  ];
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -77,40 +68,64 @@ export class RegistroTipoComponent implements OnInit {
   }
 
   private loadForEdit(id: number): void {
-    const found = this.tiposMock.find((t) => t.id === id);
+    this.loading = true;
+    this.errorMessage = '';
 
-    if (!found) {
-      this.router.navigate(['/vehiculos/tipos']);
-      return;
-    }
+    this.tiposVehiculoService.getTipoById(id).subscribe({
+      next: (tipo: TipoVehiculo) => {
+        this.submitted = false;
 
-    this.submitted = false;
+        this.form = {
+          id: tipo.id,
+          nombre: tipo.nombre,
+          descripcion: tipo.descripcion,
+          activo: tipo.activo,
+        };
 
-    this.form = {
-      id: found.id,
-      nombre: found.nombre,
-      descripcion: found.descripcion,
-      activo: found.activo,
-    };
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar tipo de vehículo:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudo cargar el tipo de vehículo.';
+        this.loading = false;
+      }
+    });
   }
 
   onRegresar(): void {
+    if (this.saving) return;
     this.router.navigate(['/vehiculos/tipos']);
   }
 
   onGuardar(): void {
     this.submitted = true;
+    this.errorMessage = '';
 
     if (!this.form.nombre || !this.form.nombre.trim()) return;
 
-    const payload = {
-      ...this.form,
+    const payload: GuardarTipoVehiculoRequest = {
+      id: this.isEditMode ? this.form.id : null,
       nombre: this.form.nombre.trim(),
       descripcion: (this.form.descripcion || '').trim(),
+      activo: this.form.activo,
     };
 
-    console.log('[RegistroTipo] Guardar:', payload);
+    this.saving = true;
 
-    this.router.navigate(['/vehiculos/tipos']);
+    const request$ = this.isEditMode
+      ? this.tiposVehiculoService.editarTipo(payload)
+      : this.tiposVehiculoService.crearTipo(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.saving = false;
+        this.router.navigate(['/vehiculos/tipos']);
+      },
+      error: (error) => {
+        console.error('Error al guardar tipo de vehículo:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudo guardar el tipo de vehículo.';
+        this.saving = false;
+      }
+    });
   }
 }

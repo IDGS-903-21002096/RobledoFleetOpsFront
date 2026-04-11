@@ -4,7 +4,9 @@
   <div class="max-w-screen-xl mx-auto p-6">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Registro de usuario</h1>
+        <h1 class="text-2xl font-bold text-gray-900">
+          {{ isEditMode ? 'Editar usuario' : 'Registro de usuario' }}
+        </h1>
         <p class="text-gray-600">
           Captura la información del usuario y asigna un rol para dar acceso al sistema.
         </p>
@@ -14,11 +16,21 @@
         type="button"
         class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-               font-semibold rounded-full text-sm px-5 py-2.5 shadow transition active:scale-[0.98]"
+               font-semibold rounded-full text-sm px-5 py-2.5 shadow transition active:scale-[0.98]
+               disabled:opacity-60 disabled:cursor-not-allowed"
         (click)="onCancelar()"
+        [disabled]="loading || saving"
       >
         Regresar
       </button>
+    </div>
+
+    <div *ngIf="loading" class="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+      Cargando información...
+    </div>
+
+    <div *ngIf="errorMessage" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+      {{ errorMessage }}
     </div>
 
     <div class="rounded-2xl bg-white p-6 shadow-sm border border-gray-200">
@@ -52,6 +64,7 @@
                 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
                   !nombreTouched
               }"
+              [disabled]="loading || saving"
               required
             />
 
@@ -91,6 +104,7 @@
                 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
                   !apellidosTouched
               }"
+              [disabled]="loading || saving"
               required
             />
 
@@ -130,6 +144,7 @@
                 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
                   !emailTouched
               }"
+              [disabled]="loading || saving"
               required
             />
 
@@ -146,8 +161,8 @@
             <label
               class="block mb-2.5 text-sm font-medium"
               [ngClass]="{
-                'text-green-700': rolTouched && isValidRol(model.rol),
-                'text-red-700': rolTouched && !isValidRol(model.rol),
+                'text-green-700': rolTouched && isValidRol(model.rolId),
+                'text-red-700': rolTouched && !isValidRol(model.rolId),
                 'text-gray-700': !rolTouched
               }"
             >
@@ -155,30 +170,31 @@
             </label>
 
             <select
-              name="rol"
-              [(ngModel)]="model.rol"
+              name="rolId"
+              [(ngModel)]="model.rolId"
               (blur)="rolTouched = true"
               class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
               [ngClass]="{
                 'bg-green-50 border border-green-300 text-green-700 focus:ring-green-500 focus:border-green-500':
-                  rolTouched && isValidRol(model.rol),
+                  rolTouched && isValidRol(model.rolId),
                 'bg-red-50 border border-red-300 text-red-700 focus:ring-red-500 focus:border-red-500':
-                  rolTouched && !isValidRol(model.rol),
+                  rolTouched && !isValidRol(model.rolId),
                 'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
                   !rolTouched
               }"
+              [disabled]="loading || saving"
               required
             >
-              <option value="" disabled selected>Selecciona un rol</option>
-              <option *ngFor="let r of roles" [value]="r">{{ r }}</option>
+              <option [ngValue]="null" disabled>Selecciona un rol</option>
+              <option *ngFor="let r of roles" [ngValue]="r.id">{{ r.nombre }}</option>
             </select>
 
-            <p *ngIf="rolTouched && !isValidRol(model.rol)" class="mt-2.5 text-sm text-red-700">
+            <p *ngIf="rolTouched && !isValidRol(model.rolId)" class="mt-2.5 text-sm text-red-700">
               <span class="font-medium">Oh, snap!</span> Selecciona un rol.
             </p>
 
-            <p *ngIf="rolTouched && isValidRol(model.rol)" class="mt-2.5 text-sm text-green-700">
-              <span class="font-medium">Bien hecho.</span> Rol seleccionado.
+            <p *ngIf="rolTouched && isValidRol(model.rolId)" class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span> Rol seleccionado: {{ selectedRolNombre }}.
             </p>
           </div>
         </div>
@@ -230,8 +246,9 @@
                 *ngFor="let a of avatars"
                 class="group relative h-12 w-12 rounded-full border border-gray-200 bg-white
                        hover:border-blue-300 hover:ring-4 hover:ring-blue-100
-                       transition overflow-hidden"
+                       transition overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
                 (click)="selectAvatar(a)"
+                [disabled]="loading || saving"
                 [class.border-blue-400]="model.avatarKey === a.key"
                 [class.ring-4]="model.avatarKey === a.key"
                 [class.ring-blue-100]="model.avatarKey === a.key"
@@ -252,22 +269,24 @@
           <div
             class="rounded-2xl p-5"
             [ngClass]="{
-              'border border-green-300 bg-green-50/40': passwordTouched && isValidPassword(model.password),
-              'border border-red-300 bg-red-50/40': passwordTouched && !isValidPassword(model.password),
+              'border border-green-300 bg-green-50/40': passwordTouched && isPasswordSectionValid(),
+              'border border-red-300 bg-red-50/40': passwordTouched && !isPasswordSectionValid(),
               'border border-gray-200 bg-white': !passwordTouched
             }"
           >
             <p
               class="text-sm font-semibold"
               [ngClass]="{
-                'text-green-700': passwordTouched && isValidPassword(model.password),
-                'text-red-700': passwordTouched && !isValidPassword(model.password),
+                'text-green-700': passwordTouched && isPasswordSectionValid(),
+                'text-red-700': passwordTouched && !isPasswordSectionValid(),
                 'text-gray-900': !passwordTouched
               }"
             >
-              Contraseña *
+              Contraseña {{ isEditMode ? '' : '*' }}
             </p>
-            <p class="text-xs text-gray-600 mb-3">Mínimo 8 caracteres, 1 mayúscula y 1 número.</p>
+            <p class="text-xs text-gray-600 mb-3">
+              {{ isEditMode ? 'Déjala vacía si no deseas cambiarla.' : 'Mínimo 8 caracteres, 1 mayúscula y 1 número.' }}
+            </p>
 
             <input
               type="password"
@@ -278,20 +297,22 @@
               class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none"
               [ngClass]="{
                 'bg-green-50 border border-green-300 text-green-700 placeholder:text-green-700 focus:ring-green-500 focus:border-green-500':
-                  passwordTouched && isValidPassword(model.password),
+                  passwordTouched && isPasswordSectionValid(),
                 'bg-red-50 border border-red-300 text-red-700 placeholder:text-red-700 focus:ring-red-500 focus:border-red-500':
-                  passwordTouched && !isValidPassword(model.password),
+                  passwordTouched && !isPasswordSectionValid(),
                 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
                   !passwordTouched
               }"
+              [disabled]="loading || saving"
               required
             />
 
-            <p *ngIf="passwordTouched && isValidPassword(model.password)" class="mt-2.5 text-sm text-green-700">
-              <span class="font-medium">Bien hecho.</span> La contraseña cumple.
+            <p *ngIf="passwordTouched && isPasswordSectionValid()" class="mt-2.5 text-sm text-green-700">
+              <span class="font-medium">Bien hecho.</span>
+              {{ isEditMode && !model.password.trim() ? 'La contraseña actual se conservará.' : 'La contraseña cumple.' }}
             </p>
 
-            <p *ngIf="passwordTouched && !isValidPassword(model.password)" class="mt-2.5 text-sm text-red-700">
+            <p *ngIf="passwordTouched && !isPasswordSectionValid()" class="mt-2.5 text-sm text-red-700">
               <span class="font-medium">Oh, snap!</span> Usa mínimo 8 caracteres, 1 mayúscula y 1 número.
             </p>
           </div>
@@ -302,8 +323,10 @@
             type="button"
             class="inline-flex items-center justify-center rounded-full
                    bg-gray-200 hover:bg-gray-300 text-gray-800
-                   text-sm font-semibold px-6 py-2.5 shadow-sm"
+                   text-sm font-semibold px-6 py-2.5 shadow-sm
+                   disabled:opacity-60 disabled:cursor-not-allowed"
             (click)="onCancelar()"
+            [disabled]="loading || saving"
           >
             Cancelar
           </button>
@@ -313,10 +336,12 @@
             class="inline-flex items-center justify-center rounded-full
                    text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                    hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-                   text-sm font-semibold px-6 py-2.5 shadow transition active:scale-[0.98]"
+                   text-sm font-semibold px-6 py-2.5 shadow transition active:scale-[0.98]
+                   disabled:opacity-60 disabled:cursor-not-allowed"
             (click)="onGuardar()"
+            [disabled]="loading || saving"
           >
-            Guardar usuario
+            {{ saving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Guardar usuario') }}
           </button>
         </div>
       </form>

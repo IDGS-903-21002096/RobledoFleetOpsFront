@@ -1,10 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import {
+  CrearVehiculoRequest,
+  EditarVehiculoRequest,
+  Vehiculo,
+  VehiculosService
+} from '../../../../services/vehiculos.service';
+import { TipoVehiculo, TiposVehiculoService } from '../../../../services/tipos-vehiculo.service';
 
 type InicioEstadisticas = 'Fecha de registro' | 'Fecha de compra';
 type MedidaUso = 'Kilómetros' | 'Millas' | 'Horas';
@@ -24,15 +31,20 @@ type DivisionVehiculo =
   templateUrl: './registro-vehiculo.html',
   styleUrl: './registro-vehiculo.scss',
 })
-export class RegistroVehiculo {
-  constructor(private router: Router) {}
+export class RegistroVehiculoComponent implements OnInit {
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private vehiculosService = inject(VehiculosService);
+  private tiposVehiculoService = inject(TiposVehiculoService);
 
-  // =========================
-  // Catálogos (selects)
-  // =========================
-  tiposVehiculo: string[] = ['Autobús', 'Automóvil', 'Camión', 'Camioneta', 'Motocicleta', 'Otro'];
+  isEditMode = false;
+  loading = false;
+  saving = false;
+  errorMessage = '';
+
+  tiposVehiculo: TipoVehiculo[] = [];
   statusVehiculo: string[] = ['Asignado', 'Disponible', 'En taller', 'Fuera de Servicio'];
-  gruposVehiculo: string[] = ['Autobuses', 'Tractos', 'Urvan', 'Camionetas', 'Autos', 'Otro'];
+  gruposVehiculo: string[] = ['Autobuses', 'Tractos', 'Sprinter', 'Urvan', 'Camionetas', 'Autos', 'Otro'];
   divisionesVehiculo: DivisionVehiculo[] = [
     'Container',
     'Carga León',
@@ -42,22 +54,17 @@ export class RegistroVehiculo {
     'Turismo',
   ];
 
-  // =========================
-  // Modelo (ngModel)
-  // =========================
   model: {
-    id: string;
+    id: number | null;
     nombreVehiculo: string;
     marca: string;
     modelo: string;
     anio: number | null;
-    tipoVehiculo: string;
+    tipoVehiculoId: number | null;
     statusInicial: string;
     inicioEstadisticas: InicioEstadisticas | '';
     medidaUso: MedidaUso | '';
     medidaCombustible: MedidaCombustible | '';
-
-    // Adicional
     grupo: string;
     division: DivisionVehiculo | '';
     numeroSerie: string;
@@ -65,18 +72,18 @@ export class RegistroVehiculo {
     color: string;
     companiaSeguros: string;
     polizaSeguro: string;
+    activo: boolean;
   } = {
-    id: '',
+    id: null,
     nombreVehiculo: '',
     marca: '',
     modelo: '',
     anio: null,
-    tipoVehiculo: '',
+    tipoVehiculoId: null,
     statusInicial: '',
     inicioEstadisticas: '',
     medidaUso: '',
     medidaCombustible: '',
-
     grupo: '',
     division: '',
     numeroSerie: '',
@@ -84,12 +91,9 @@ export class RegistroVehiculo {
     color: '',
     companiaSeguros: '',
     polizaSeguro: '',
+    activo: true,
   };
 
-  // =========================
-  // Flags "touched"
-  // =========================
-  // Requeridos
   nombreVehiculoTouched = false;
   marcaTouched = false;
   modeloTouched = false;
@@ -100,7 +104,6 @@ export class RegistroVehiculo {
   medidaUsoTouched = false;
   medidaCombTouched = false;
 
-  // Opcionales
   grupoTouched = false;
   divisionTouched = false;
   serieTouched = false;
@@ -109,26 +112,86 @@ export class RegistroVehiculo {
   companiaTouched = false;
   polizaTouched = false;
 
-  // =========================
-  // Helpers
-  // =========================
+  ngOnInit(): void {
+    const idParam = this.route.snapshot.paramMap.get('id');
+    this.isEditMode = !!idParam;
+    this.cargarPantalla(idParam ? Number(idParam) : null);
+  }
+
+  private cargarPantalla(vehiculoId: number | null): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.tiposVehiculoService.getTipos().subscribe({
+      next: (tipos) => {
+        this.tiposVehiculo = (tipos ?? []).filter(t => t.activo);
+
+        if (vehiculoId) {
+          this.cargarVehiculo(vehiculoId);
+        } else {
+          this.loading = false;
+        }
+      },
+      error: (error) => {
+        console.error('Error al cargar tipos de vehículo:', error);
+        this.errorMessage = 'No se pudieron cargar los tipos de vehículo.';
+        this.loading = false;
+      }
+    });
+  }
+
+  private cargarVehiculo(id: number): void {
+    this.vehiculosService.getVehiculoById(id).subscribe({
+      next: (vehiculo: Vehiculo) => {
+        this.model = {
+          id: vehiculo.id,
+          nombreVehiculo: vehiculo.nombreVehiculo ?? '',
+          marca: vehiculo.marca ?? '',
+          modelo: vehiculo.modelo ?? '',
+          anio: vehiculo.anio ?? null,
+          tipoVehiculoId: vehiculo.tipoVehiculoId ?? null,
+          statusInicial: vehiculo.statusInicial ?? '',
+          inicioEstadisticas: (vehiculo.inicioEstadisticas as InicioEstadisticas) ?? '',
+          medidaUso: (vehiculo.medidaUso as MedidaUso) ?? '',
+          medidaCombustible: (vehiculo.medidaCombustible as MedidaCombustible) ?? '',
+          grupo: vehiculo.grupo ?? '',
+          division: (vehiculo.division as DivisionVehiculo) ?? '',
+          numeroSerie: vehiculo.numeroSerie ?? '',
+          placa: vehiculo.placa ?? '',
+          color: vehiculo.color ?? '',
+          companiaSeguros: vehiculo.companiaSeguros ?? '',
+          polizaSeguro: vehiculo.polizaSeguro ?? '',
+          activo: vehiculo.activo,
+        };
+
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar vehículo:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudo cargar el vehículo.';
+        this.loading = false;
+      }
+    });
+  }
+
   private isNonEmptyText(v: unknown): boolean {
     return typeof v === 'string' && v.trim().length > 0;
   }
 
-  /** Opcional text: tiene algo escrito */
+  private normalizeOptional(value: string): string | null {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
   hasText(v: unknown): boolean {
     return this.isNonEmptyText(v);
   }
 
-  /** Select/date: tiene selección */
   hasSelection(v: unknown): boolean {
-    return typeof v === 'string' && v !== '';
+    if (typeof v === 'number') return v > 0;
+    return typeof v === 'string' && v.trim() !== '';
   }
 
-  // =========================
-  // Validaciones (Requeridos)
-  // =========================
   isValidNombreVehiculo(v: string): boolean {
     return this.isNonEmptyText(v) && v.trim().length >= 2;
   }
@@ -148,8 +211,8 @@ export class RegistroVehiculo {
     return year >= 1900 && year <= currentYear + 1;
   }
 
-  isValidTipo(v: string): boolean {
-    return this.isNonEmptyText(v);
+  isValidTipo(v: number | null): boolean {
+    return typeof v === 'number' && v > 0;
   }
 
   isValidStatus(v: string): boolean {
@@ -168,10 +231,6 @@ export class RegistroVehiculo {
     return v === 'Litros' || v === 'Galones';
   }
 
-  // =========================
-  // Validaciones (Opcionales)
-  // (validan formato SOLO si traen valor)
-  // =========================
   isValidGrupo(v: string): boolean {
     return !this.isNonEmptyText(v) || v.trim().length >= 2;
   }
@@ -207,16 +266,25 @@ export class RegistroVehiculo {
     return v.trim().length >= 4;
   }
 
-  // =========================
-  // Acciones
-  // =========================
+  get selectedTipoNombre(): string {
+    const tipo = this.tiposVehiculo.find(t => t.id === this.model.tipoVehiculoId);
+    return tipo?.nombre ?? '';
+  }
+
   onCancelar(): void {
-    // Ir al listado de vehículos
+    if (this.saving) return;
     this.router.navigate(['/vehiculos']);
   }
 
   onGuardar(): void {
-    // Marca touched de campos obligatorios para mostrar feedback
+    console.log('=== onGuardar() INICIADO ===');
+    console.log('Modelo actual:', this.model);
+
+    if (this.saving) {
+      console.log('Se canceló porque saving ya estaba en true');
+      return;
+    }
+
     this.nombreVehiculoTouched = true;
     this.marcaTouched = true;
     this.modeloTouched = true;
@@ -227,20 +295,113 @@ export class RegistroVehiculo {
     this.medidaUsoTouched = true;
     this.medidaCombTouched = true;
 
-    // Validación mínima requerida
-    const ok =
-      this.isValidNombreVehiculo(this.model.nombreVehiculo) &&
-      this.isValidMarca(this.model.marca) &&
-      this.isValidModelo(this.model.modelo) &&
-      this.isValidAnio(this.model.anio) &&
-      this.isValidTipo(this.model.tipoVehiculo) &&
-      this.isValidStatus(this.model.statusInicial) &&
-      this.isValidInicioEstadisticas(this.model.inicioEstadisticas) &&
-      this.isValidMedidaUso(this.model.medidaUso) &&
-      this.isValidMedidaComb(this.model.medidaCombustible);
+    this.grupoTouched = true;
+    this.divisionTouched = true;
+    this.serieTouched = true;
+    this.placaTouched = true;
+    this.colorTouched = true;
+    this.companiaTouched = true;
+    this.polizaTouched = true;
 
-    if (!ok) return;
+    this.errorMessage = '';
 
-    // Aquí después iría el submit al API.
+    const validaciones = {
+      nombreVehiculo: this.isValidNombreVehiculo(this.model.nombreVehiculo),
+      marca: this.isValidMarca(this.model.marca),
+      modelo: this.isValidModelo(this.model.modelo),
+      anio: this.isValidAnio(this.model.anio),
+      tipoVehiculoId: this.isValidTipo(this.model.tipoVehiculoId),
+      statusInicial: this.isValidStatus(this.model.statusInicial),
+      inicioEstadisticas: this.isValidInicioEstadisticas(this.model.inicioEstadisticas),
+      medidaUso: this.isValidMedidaUso(this.model.medidaUso),
+      medidaCombustible: this.isValidMedidaComb(this.model.medidaCombustible),
+      grupo: this.isValidGrupo(this.model.grupo),
+      division: this.isValidDivision(this.model.division),
+      numeroSerie: this.isValidSerie(this.model.numeroSerie),
+      placa: this.isValidPlaca(this.model.placa),
+      color: this.isValidColor(this.model.color),
+      companiaSeguros: this.isValidCompania(this.model.companiaSeguros),
+      polizaSeguro: this.isValidPoliza(this.model.polizaSeguro),
+    };
+
+    console.log('Validaciones:', validaciones);
+
+    const ok = Object.values(validaciones).every(v => v);
+
+    if (!ok) {
+      console.warn('Formulario inválido. No se enviará al backend.');
+      this.errorMessage = 'Revisa los campos marcados antes de guardar.';
+      return;
+    }
+
+    const payloadBase: CrearVehiculoRequest = {
+      nombreVehiculo: this.model.nombreVehiculo.trim(),
+      marca: this.model.marca.trim(),
+      modelo: this.model.modelo.trim(),
+      anio: this.model.anio!,
+      tipoVehiculoId: this.model.tipoVehiculoId!,
+      statusInicial: this.model.statusInicial.trim(),
+      inicioEstadisticas: this.model.inicioEstadisticas,
+      medidaUso: this.model.medidaUso,
+      medidaCombustible: this.model.medidaCombustible,
+      grupo: this.normalizeOptional(this.model.grupo),
+      division: this.normalizeOptional(this.model.division),
+      numeroSerie: this.normalizeOptional(this.model.numeroSerie),
+      placa: this.normalizeOptional(this.model.placa),
+      color: this.normalizeOptional(this.model.color),
+      companiaSeguros: this.normalizeOptional(this.model.companiaSeguros),
+      polizaSeguro: this.normalizeOptional(this.model.polizaSeguro),
+    };
+
+    console.log('Payload a enviar:', payloadBase);
+
+    this.saving = true;
+    console.log('saving = true');
+
+    if (this.isEditMode && this.model.id) {
+      const payload: EditarVehiculoRequest = {
+        id: this.model.id,
+        activo: this.model.activo,
+        ...payloadBase,
+      };
+
+      console.log('Enviando PUT:', payload);
+
+      this.vehiculosService.editarVehiculo(payload).subscribe({
+        next: (response) => {
+          console.log('PUT exitoso:', response);
+          this.saving = false;
+          this.router.navigate(['/vehiculos']);
+        },
+        error: (error) => {
+          console.error('Error al actualizar vehículo:', error);
+          this.errorMessage =
+            error?.error?.mensaje ||
+            error?.error?.title ||
+            'No se pudo actualizar el vehículo.';
+          this.saving = false;
+        }
+      });
+
+      return;
+    }
+
+    console.log('Enviando POST:', payloadBase);
+
+    this.vehiculosService.crearVehiculo(payloadBase).subscribe({
+      next: (response) => {
+        console.log('POST exitoso:', response);
+        this.saving = false;
+        this.router.navigate(['/vehiculos']);
+      },
+      error: (error) => {
+        console.error('Error al crear vehículo:', error);
+        this.errorMessage =
+          error?.error?.mensaje ||
+          error?.error?.title ||
+          'No se pudo crear el vehículo.';
+        this.saving = false;
+      }
+    });
   }
 }

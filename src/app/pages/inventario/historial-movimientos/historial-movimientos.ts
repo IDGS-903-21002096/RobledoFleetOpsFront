@@ -1,31 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
 
-type Unidad = 'pz' | 'lt' | 'kg' | 'm' | 'jgo';
-type TipoMovimiento = 'ENTRADA' | 'SALIDA';
-
-interface MovimientoInventario {
-  folio: string;
-  fecha: string;
-  tipo: TipoMovimiento;
-  detalleTipo: string;
-  codigoArticulo: string;
-  articulo: string;
-  grupo: string;
-  unidad: Unidad;
-  cantidad: number;
-  costoUnitario: number;
-  costoTotal: number;
-  proveedor?: string;
-  responsable?: string;
-  referencia: string;
-  observaciones: string;
-  usuario: string;
-}
+import {
+  HistorialMovimientosResumen,
+  HistorialMovimientosService,
+  MovimientoInventario
+} from '../../../../services/historial-movimientos.service';
 
 @Component({
   selector: 'app-historial-movimientos',
@@ -34,111 +18,8 @@ interface MovimientoInventario {
   templateUrl: './historial-movimientos.html',
   styleUrl: './historial-movimientos.scss',
 })
-export class HistorialMovimientosComponent {
-  movimientos: MovimientoInventario[] = [
-    {
-      folio: 'ENT-0001',
-      fecha: '2026-03-02',
-      tipo: 'ENTRADA',
-      detalleTipo: 'COMPRA',
-      codigoArticulo: 'L020',
-      articulo: 'Aceite 15W-40',
-      grupo: 'LUBRICANTE',
-      unidad: 'lt',
-      cantidad: 20,
-      costoUnitario: 98.5,
-      costoTotal: 1970,
-      proveedor: 'Lubricantes del Bajío',
-      referencia: 'FAC-1048',
-      observaciones: 'Compra para stock semanal.',
-      usuario: 'Jorge Rangel',
-    },
-    {
-      folio: 'SAL-0001',
-      fecha: '2026-03-03',
-      tipo: 'SALIDA',
-      detalleTipo: 'DAÑO',
-      codigoArticulo: 'R310',
-      articulo: 'Filtro de aire',
-      grupo: 'REFACCIÓN',
-      unidad: 'pz',
-      cantidad: 1,
-      costoUnitario: 420,
-      costoTotal: 420,
-      responsable: 'Almacén',
-      referencia: 'INC-003',
-      observaciones: 'Filtro dañado durante revisión de almacén.',
-      usuario: 'Jorge Rangel',
-    },
-    {
-      folio: 'ENT-0002',
-      fecha: '2026-03-04',
-      tipo: 'ENTRADA',
-      detalleTipo: 'COMPRA',
-      codigoArticulo: 'R310',
-      articulo: 'Filtro de aire',
-      grupo: 'REFACCIÓN',
-      unidad: 'pz',
-      cantidad: 10,
-      costoUnitario: 420,
-      costoTotal: 4200,
-      proveedor: 'Refacciones León',
-      referencia: 'REM-8821',
-      observaciones: 'Ingreso por compra general.',
-      usuario: 'Administrador',
-    },
-    {
-      folio: 'SAL-0002',
-      fecha: '2026-03-05',
-      tipo: 'SALIDA',
-      detalleTipo: 'CONSUMO INTERNO',
-      codigoArticulo: 'L020',
-      articulo: 'Aceite 15W-40',
-      grupo: 'LUBRICANTE',
-      unidad: 'lt',
-      cantidad: 2,
-      costoUnitario: 98.5,
-      costoTotal: 197,
-      responsable: 'Mantenimiento',
-      referencia: 'INT-009',
-      observaciones: 'Consumo interno para pruebas operativas.',
-      usuario: 'Administrador',
-    },
-    {
-      folio: 'ENT-0003',
-      fecha: '2026-03-06',
-      tipo: 'ENTRADA',
-      detalleTipo: 'AJUSTE POSITIVO',
-      codigoArticulo: 'H001',
-      articulo: 'Pistola de Pintura',
-      grupo: 'HERRAMIENTA',
-      unidad: 'pz',
-      cantidad: 1,
-      costoUnitario: 1250,
-      costoTotal: 1250,
-      proveedor: 'Herramientas Industriales del Centro',
-      referencia: 'AJ-001',
-      observaciones: 'Regularización por conteo físico.',
-      usuario: 'Supervisor almacén',
-    },
-    {
-      folio: 'SAL-0003',
-      fecha: '2026-03-06',
-      tipo: 'SALIDA',
-      detalleTipo: 'MERMA',
-      codigoArticulo: 'S777',
-      articulo: 'Sellador silicón',
-      grupo: 'CONSUMIBLE',
-      unidad: 'pz',
-      cantidad: 1,
-      costoUnitario: 55,
-      costoTotal: 55,
-      responsable: 'Almacén',
-      referencia: 'MER-001',
-      observaciones: 'Empaque abierto y no utilizable.',
-      usuario: 'Supervisor almacén',
-    },
-  ];
+export class HistorialMovimientosComponent implements OnInit {
+  private historialService = inject(HistorialMovimientosService);
 
   busqueda = '';
   filtroTipo = '';
@@ -149,33 +30,43 @@ export class HistorialMovimientosComponent {
   grupos: string[] = [];
 
   page = 1;
-  pageSize = 10;
+  pageSize = 5;
 
+  movimientos: MovimientoInventario[] = [];
   movimientosFiltrados: MovimientoInventario[] = [];
   movimientosPaginados: MovimientoInventario[] = [];
+
+  resumen: HistorialMovimientosResumen = {
+    totalMovimientos: 0,
+    totalEntradas: 0,
+    totalSalidas: 0,
+    valorTotalMovido: 0,
+  };
 
   mostrarModalDetalle = false;
   movimientoSeleccionado: MovimientoInventario | null = null;
 
-  constructor() {
-    this.grupos = Array.from(new Set(this.movimientos.map(x => x.grupo))).sort();
-    this.aplicarFiltros();
+  loading = false;
+  errorMessage = '';
+
+  ngOnInit(): void {
+    this.cargarMovimientos();
   }
 
   get totalMovimientos(): number {
-    return this.movimientosFiltrados.length;
+    return this.resumen.totalMovimientos;
   }
 
   get totalEntradas(): number {
-    return this.movimientosFiltrados.filter(x => x.tipo === 'ENTRADA').length;
+    return this.resumen.totalEntradas;
   }
 
   get totalSalidas(): number {
-    return this.movimientosFiltrados.filter(x => x.tipo === 'SALIDA').length;
+    return this.resumen.totalSalidas;
   }
 
   get valorTotalMovido(): number {
-    return this.movimientosFiltrados.reduce((acc, item) => acc + item.costoTotal, 0);
+    return this.resumen.valorTotalMovido;
   }
 
   get totalPages(): number {
@@ -195,59 +86,68 @@ export class HistorialMovimientosComponent {
     return Math.min(this.page * this.pageSize, total);
   }
 
-  private toText(v: unknown): string {
-    return v === null || v === undefined ? '' : String(v).toLowerCase();
+  private buildFilters() {
+    return {
+      busqueda: this.busqueda,
+      tipo: this.filtroTipo,
+      grupo: this.filtroGrupo,
+      fechaDesde: this.fechaDesde,
+      fechaHasta: this.fechaHasta,
+    };
+  }
+
+  cargarMovimientos(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    const filters = this.buildFilters();
+
+    this.historialService.getMovimientos(filters).subscribe({
+      next: (data) => {
+        this.movimientos = data ?? [];
+        this.movimientosFiltrados = [...this.movimientos];
+        this.page = 1;
+        this.grupos = Array.from(new Set(this.movimientos.map(x => x.grupo))).sort();
+        this.refrescarPaginado();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar historial de movimientos:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudo cargar el historial de movimientos.';
+        this.movimientos = [];
+        this.movimientosFiltrados = [];
+        this.movimientosPaginados = [];
+        this.grupos = [];
+        this.loading = false;
+      }
+    });
+
+    this.historialService.getResumen(filters).subscribe({
+      next: (data) => {
+        this.resumen = data ?? {
+          totalMovimientos: 0,
+          totalEntradas: 0,
+          totalSalidas: 0,
+          valorTotalMovido: 0,
+        };
+      },
+      error: (error) => {
+        console.error('Error al cargar resumen del historial:', error);
+      }
+    });
   }
 
   aplicarFiltros(): void {
-    const q = (this.busqueda || '').trim().toLowerCase();
-    const tipo = (this.filtroTipo || '').trim().toLowerCase();
-    const grupo = (this.filtroGrupo || '').trim().toLowerCase();
-    const desde = this.fechaDesde || '';
-    const hasta = this.fechaHasta || '';
+    this.cargarMovimientos();
+  }
 
-    this.movimientosFiltrados = this.movimientos.filter(item => {
-      const matchTipo = !tipo || this.toText(item.tipo) === tipo;
-      const matchGrupo = !grupo || this.toText(item.grupo) === grupo;
-
-      const matchFechaDesde = !desde || item.fecha >= desde;
-      const matchFechaHasta = !hasta || item.fecha <= hasta;
-
-      const matchQuery =
-        !q ||
-        [
-          item.folio,
-          item.fecha,
-          item.tipo,
-          item.detalleTipo,
-          item.codigoArticulo,
-          item.articulo,
-          item.grupo,
-          item.unidad,
-          item.cantidad,
-          item.costoUnitario,
-          item.costoTotal,
-          item.proveedor ?? '',
-          item.responsable ?? '',
-          item.referencia,
-          item.observaciones,
-          item.usuario,
-        ]
-          .map(v => this.toText(v))
-          .some(txt => txt.includes(q));
-
-      return matchTipo && matchGrupo && matchFechaDesde && matchFechaHasta && matchQuery;
-    });
-
-    this.movimientosFiltrados = [...this.movimientosFiltrados].sort((a, b) => {
-      if (a.fecha === b.fecha) return b.folio.localeCompare(a.folio);
-      return b.fecha.localeCompare(a.fecha);
-    });
-
-    this.page = Math.min(this.page, this.totalPages);
-    this.page = Math.max(1, this.page);
-
-    this.refrescarPaginado();
+  limpiarFiltros(): void {
+    this.busqueda = '';
+    this.filtroTipo = '';
+    this.filtroGrupo = '';
+    this.fechaDesde = '';
+    this.fechaHasta = '';
+    this.cargarMovimientos();
   }
 
   refrescarPaginado(): void {
@@ -274,7 +174,7 @@ export class HistorialMovimientosComponent {
   }
 
   trackByFolio(_: number, item: MovimientoInventario): string {
-    return item.folio;
+    return `${item.tipo}-${item.folio}`;
   }
 
   onVerDetalle(item: MovimientoInventario): void {

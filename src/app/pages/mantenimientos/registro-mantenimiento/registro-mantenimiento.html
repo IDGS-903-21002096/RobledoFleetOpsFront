@@ -4,7 +4,9 @@
   <div class="mx-auto w-full max-w-screen-xl px-4">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-slate-900">Registro de mantenimiento</h1>
+        <h1 class="text-2xl font-bold text-slate-900">
+          {{ editId ? 'Editar mantenimiento' : 'Registro de mantenimiento' }}
+        </h1>
         <p class="text-sm text-slate-500">Captura de orden de servicio, materiales y costos.</p>
 
         <div
@@ -30,38 +32,68 @@
                  text-white bg-gradient-to-r from-slate-600 via-slate-700 to-slate-800
                  hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-slate-300
                  font-semibold rounded-full text-sm px-5 py-2.5
-                 text-center leading-5 shadow transition active:scale-[0.98]"
+                 text-center leading-5 shadow transition active:scale-[0.98]
+                 disabled:opacity-60 disabled:cursor-not-allowed"
           (click)="onCancelar()"
+          [disabled]="saving || closing"
         >
           Regresar
         </button>
       </div>
     </div>
 
+    <div
+      *ngIf="errorMessage"
+      class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+    >
+      {{ errorMessage }}
+    </div>
+
+    <div
+      *ngIf="successMessage"
+      class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700"
+    >
+      {{ successMessage }}
+    </div>
+
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div class="p-6">
 
-        <h2 class="text-sm font-semibold text-slate-900 mb-4">Datos principales</h2>
+        <div *ngIf="loading" class="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          Cargando información...
+        </div>
+
+        <h2 class="mb-4 text-sm font-semibold text-slate-900">Datos principales</h2>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">No. de orden (opcional)</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">No. de orden *</label>
+
             <input
+              *ngIf="editId"
               type="text"
-              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
-                     focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
-              placeholder="Ej. OS-000123"
-              [(ngModel)]="noOrden"
-              name="noOrden"
+              class="block w-full rounded-full border border-gray-300 bg-gray-100 p-3 text-sm text-gray-700 shadow-sm
+                    cursor-not-allowed"
+              [value]="noOrden"
+              readonly
+            />
+
+            <input
+              *ngIf="!editId"
+              type="text"
+              class="block w-full rounded-full border border-gray-300 bg-gray-100 p-3 text-sm text-gray-500 shadow-sm
+                    cursor-not-allowed"
+              value="MTTO-2026-XXX"
+              readonly
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Fecha *</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Fecha *</label>
             <input
               type="date"
-              class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
-                     focus:ring-blue-500 focus:border-blue-500"
+              class="block w-full rounded-full border text-sm text-gray-900 shadow-sm
+                     focus:border-blue-500 focus:ring-blue-500 p-3"
               [ngClass]="touched.fecha && !fecha ? 'border-red-300' : 'border-gray-300'"
               [(ngModel)]="fecha"
               name="fecha"
@@ -71,11 +103,11 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Fecha del siguiente mantenimiento *</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Fecha del siguiente mantenimiento *</label>
             <input
               type="date"
-              class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
-                     focus:ring-blue-500 focus:border-blue-500"
+              class="block w-full rounded-full border text-sm text-gray-900 shadow-sm
+                     focus:border-blue-500 focus:ring-blue-500 p-3"
               [ngClass]="touched.fechaSiguiente && !fechaSiguienteMantenimiento ? 'border-red-300' : 'border-gray-300'"
               [(ngModel)]="fechaSiguienteMantenimiento"
               name="fechaSiguienteMantenimiento"
@@ -87,13 +119,13 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Horas usadas por el técnico</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Horas usadas por el técnico</label>
             <input
               type="number"
               min="0"
               step="0.25"
-              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
-                     focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
+              class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                     placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
               placeholder="Ej. 2.5"
               [(ngModel)]="horasTecnico"
               name="horasTecnico"
@@ -101,10 +133,10 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Unidad *</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Unidad *</label>
             <select
-              class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
-                     focus:ring-blue-500 focus:border-blue-500"
+              class="block w-full rounded-full border text-sm text-gray-900 shadow-sm
+                     focus:border-blue-500 focus:ring-blue-500 p-3"
               [ngClass]="touched.unidad && unidadId === null ? 'border-red-300' : 'border-gray-300'"
               [(ngModel)]="unidadId"
               name="unidadId"
@@ -112,17 +144,17 @@
             >
               <option [ngValue]="null">Selecciona una unidad...</option>
               <option *ngFor="let u of unidadesCatalogo" [ngValue]="u.id">
-                {{ u.nombre }}{{ u.placa ? ' • ' + u.placa : '' }}
+                {{ u.nombreVehiculo }}{{ u.placa ? ' • ' + u.placa : '' }}
               </option>
             </select>
             <p *ngIf="touched.unidad && unidadId === null" class="mt-1 text-xs text-red-600">Selecciona una unidad.</p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de servicio</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Tipo de servicio</label>
             <select
-              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
-                     focus:ring-blue-500 focus:border-blue-500"
+              class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                     focus:border-blue-500 focus:ring-blue-500"
               [(ngModel)]="tipoServicio"
               name="tipoServicio"
             >
@@ -132,12 +164,12 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Kilometraje *</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Kilometraje *</label>
             <input
               type="number"
               min="0"
-              class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
-                     focus:ring-blue-500 focus:border-blue-500"
+              class="block w-full rounded-full border text-sm text-gray-900 shadow-sm
+                     focus:border-blue-500 focus:ring-blue-500 p-3"
               [ngClass]="touched.kilometraje && (kilometraje === null || kilometraje < 0) ? 'border-red-300' : 'border-gray-300'"
               placeholder="Ej. 120345"
               [(ngModel)]="kilometraje"
@@ -150,25 +182,28 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Estatus</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Estatus</label>
             <select
-              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
-                     focus:ring-blue-500 focus:border-blue-500"
+              class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                     focus:border-blue-500 focus:ring-blue-500"
               [(ngModel)]="estatus"
               name="estatus"
             >
               <option value="Programado">Programado</option>
               <option value="En proceso">En proceso</option>
-              <option value="Terminado">Terminado</option>
+              <option *ngIf="!editId" value="Finalizado">Finalizado</option>
               <option value="Cancelado">Cancelado</option>
             </select>
+            <p *ngIf="editId" class="mt-1 text-xs text-slate-500">
+              Para finalizar un mantenimiento en edición utiliza el botón "Cerrar mantenimiento".
+            </p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Nivel de servicio</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Nivel de servicio</label>
             <select
-              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
-                     focus:ring-blue-500 focus:border-blue-500"
+              class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                     focus:border-blue-500 focus:ring-blue-500"
               [(ngModel)]="nivelServicio"
               name="nivelServicio"
             >
@@ -178,13 +213,13 @@
           </div>
 
           <div class="xl:col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Nombre del técnico(s) *</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Nombre del técnico(s) *</label>
             <input
               type="text"
-              class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
-                     focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+              class="block w-full rounded-full border text-sm text-gray-900 shadow-sm
+                     focus:border-blue-500 focus:ring-blue-500 placeholder:text-gray-400 p-3"
               [ngClass]="touched.tecnicos && tecnicos.trim().length === 0 ? 'border-red-300' : 'border-gray-300'"
-              placeholder="Ej. Juan Pérez, Carlos Herández"
+              placeholder="Ej. Juan Pérez, Carlos Hernández"
               [(ngModel)]="tecnicos"
               name="tecnicos"
               (blur)="touched.tecnicos = true"
@@ -195,11 +230,11 @@
           </div>
 
           <div class="md:col-span-2 xl:col-span-4">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Observaciones</label>
             <textarea
               rows="4"
-              class="block w-full p-4 bg-white border border-gray-300 text-gray-900 text-sm rounded-2xl shadow-sm
-                     focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400 resize-none"
+              class="block w-full rounded-2xl border border-gray-300 bg-white p-4 text-sm text-gray-900 shadow-sm
+                     focus:border-blue-500 focus:ring-blue-500 placeholder:text-gray-400 resize-none"
               placeholder="Describe observaciones generales del mantenimiento..."
               [(ngModel)]="observaciones"
               name="observaciones"
@@ -209,7 +244,7 @@
 
         <div class="my-6 h-px bg-gray-100"></div>
 
-        <h2 class="text-sm font-semibold text-slate-900 mb-4">Checklist</h2>
+        <h2 class="mb-4 text-sm font-semibold text-slate-900">Checklist</h2>
 
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <label class="inline-flex items-center gap-2 text-sm text-slate-700">
@@ -256,8 +291,8 @@
             <div class="mt-2" *ngIf="checklist.Otro">
               <input
                 type="text"
-                class="block w-full p-3 bg-white border text-gray-900 text-sm rounded-full shadow-sm
-                       focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+                class="block w-full rounded-full border text-sm text-gray-900 shadow-sm
+                       focus:border-blue-500 focus:ring-blue-500 placeholder:text-gray-400 p-3"
                 [ngClass]="checklist.Otro && touched.otroTexto && otroTexto.trim().length === 0 ? 'border-red-300' : 'border-gray-300'"
                 placeholder="Describe la observación..."
                 [(ngModel)]="otroTexto"
@@ -273,7 +308,7 @@
 
         <div class="my-6 h-px bg-gray-100"></div>
 
-        <div class="flex items-center justify-between mb-4">
+        <div class="mb-4 flex items-center justify-between">
           <h2 class="text-sm font-semibold text-slate-900">Material del inventario</h2>
 
           <button
@@ -303,17 +338,17 @@
 
               <tbody>
                 <tr *ngFor="let m of materiales; let i = index" class="border-t border-gray-100">
-                  <td class="px-6 py-4 min-w-[260px]">
+                  <td class="min-w-[260px] px-6 py-4">
                     <select
-                      class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
-                             focus:ring-blue-500 focus:border-blue-500"
+                      class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                             focus:border-blue-500 focus:ring-blue-500"
                       [(ngModel)]="m.catalogoId"
                       [name]="'mat_' + i"
                       (change)="onSelectMaterial(m)"
                     >
                       <option [ngValue]="null">Selecciona material...</option>
                       <option *ngFor="let c of materialesCatalogo" [ngValue]="c.id">
-                        {{ c.nombre }} ({{ c.unidad || 'u' }}) • ${{ c.precio }}
+                        {{ c.nombre }} ({{ c.unidad || 'u' }}) • ${{ c.precio | number:'1.2-2' }}
                       </option>
                     </select>
                     <div class="mt-1 text-xs text-gray-500" *ngIf="m.nombre">
@@ -321,35 +356,35 @@
                     </div>
                   </td>
 
-                  <td class="px-6 py-4 w-[160px]">
+                  <td class="w-[160px] px-6 py-4">
                     <input
                       type="number"
                       min="0"
                       step="1"
-                      class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
-                             focus:ring-blue-500 focus:border-blue-500"
+                      class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                             focus:border-blue-500 focus:ring-blue-500"
                       [(ngModel)]="m.cantidad"
                       [name]="'qty_' + i"
                     />
                   </td>
 
-                  <td class="px-6 py-4 w-[200px]">
+                  <td class="w-[200px] px-6 py-4">
                     <input
                       type="number"
                       min="0"
                       step="0.01"
-                      class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full shadow-sm
-                             focus:ring-blue-500 focus:border-blue-500"
+                      class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                             focus:border-blue-500 focus:ring-blue-500"
                       [(ngModel)]="m.precioUnitario"
                       [name]="'price_' + i"
                     />
                   </td>
 
-                  <td class="px-6 py-4 text-right font-semibold text-gray-900 w-[160px]">
+                  <td class="w-[160px] px-6 py-4 text-right font-semibold text-gray-900">
                     ${{ materialSubtotal(m) | number:'1.2-2' }}
                   </td>
 
-                  <td class="px-6 py-4 text-right w-[140px]">
+                  <td class="w-[140px] px-6 py-4 text-right">
                     <button
                       type="button"
                       class="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700
@@ -363,7 +398,7 @@
                 </tr>
 
                 <tr class="border-t border-gray-100 bg-gray-50/50">
-                  <td colspan="3" class="px-6 py-4 text-right text-sm text-gray-600 font-medium">
+                  <td colspan="3" class="px-6 py-4 text-right text-sm font-medium text-gray-600">
                     Total materiales
                   </td>
                   <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">
@@ -371,7 +406,6 @@
                   </td>
                   <td class="px-6 py-4"></td>
                 </tr>
-
               </tbody>
             </table>
           </div>
@@ -379,17 +413,17 @@
 
         <div class="my-6 h-px bg-gray-100"></div>
 
-        <h2 class="text-sm font-semibold text-slate-900 mb-4">Costos</h2>
+        <h2 class="mb-4 text-sm font-semibold text-slate-900">Costos</h2>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Precio mano de obra</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Precio mano de obra</label>
             <input
               type="number"
               min="0"
               step="0.01"
-              class="block w-full p-3 bg-white border border-gray-300 text-gray-900 text-sm rounded-full
-                     focus:ring-blue-500 focus:border-blue-500 shadow-sm placeholder:text-gray-400"
+              class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                     placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
               placeholder="Ej. 1500"
               [(ngModel)]="manoObra"
               name="manoObra"
@@ -409,7 +443,7 @@
               <div class="mt-3 h-px bg-gray-100"></div>
               <div class="mt-3 flex items-center justify-between text-base">
                 <span class="font-semibold text-slate-900">Precio final del servicio</span>
-                <span class="font-bold text-slate-900 text-lg">${{ totalFinal() | number:'1.2-2' }}</span>
+                <span class="text-lg font-bold text-slate-900">${{ totalFinal() | number:'1.2-2' }}</span>
               </div>
             </div>
           </div>
@@ -417,13 +451,30 @@
 
         <div class="mt-8 flex items-center justify-end gap-3">
           <button
+            *ngIf="canCerrarDesdeFormulario"
+            type="button"
+            class="shrink-0 inline-flex items-center gap-2
+                   text-white bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700
+                   hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-emerald-300
+                   font-semibold rounded-full text-sm px-5 py-2.5
+                   text-center leading-5 shadow transition active:scale-[0.98]
+                   disabled:opacity-60 disabled:cursor-not-allowed"
+            (click)="onCerrarMantenimiento()"
+            [disabled]="saving || loading || closing"
+          >
+            {{ closing ? 'Cerrando...' : 'Cerrar mantenimiento' }}
+          </button>
+
+          <button
             type="button"
             class="shrink-0 inline-flex items-center gap-2
                    text-white bg-gradient-to-r from-slate-600 via-slate-700 to-slate-800
                    hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-slate-300
                    font-semibold rounded-full text-sm px-5 py-2.5
-                   text-center leading-5 shadow transition active:scale-[0.98]"
+                   text-center leading-5 shadow transition active:scale-[0.98]
+                   disabled:opacity-60 disabled:cursor-not-allowed"
             (click)="onCancelar()"
+            [disabled]="saving || closing"
           >
             Cancelar
           </button>
@@ -434,10 +485,12 @@
                    text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                    hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
                    font-semibold rounded-full text-sm px-5 py-2.5
-                   text-center leading-5 shadow transition active:scale-[0.98]"
+                   text-center leading-5 shadow transition active:scale-[0.98]
+                   disabled:opacity-60 disabled:cursor-not-allowed"
             (click)="onGuardar()"
+            [disabled]="saving || loading || closing"
           >
-            Guardar
+            {{ saving ? (editId ? 'Actualizando...' : 'Guardando...') : (editId ? 'Actualizar' : 'Guardar') }}
           </button>
         </div>
 

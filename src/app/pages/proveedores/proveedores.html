@@ -23,7 +23,29 @@
     </div>
 
     <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div></div>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition"
+          [ngClass]="estadoFiltro === 'ACTIVOS'
+            ? 'bg-emerald-100 text-emerald-700'
+            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+          (click)="onCambiarFiltro('ACTIVOS')"
+        >
+          Activos
+        </button>
+
+        <button
+          type="button"
+          class="rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition"
+          [ngClass]="estadoFiltro === 'INACTIVOS'
+            ? 'bg-rose-100 text-rose-700'
+            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+          (click)="onCambiarFiltro('INACTIVOS')"
+        >
+          Inactivos
+        </button>
+      </div>
 
       <form class="w-full md:max-w-md">
         <label for="searchProveedores" class="sr-only">Buscar</label>
@@ -44,6 +66,7 @@
             placeholder="Buscar proveedor..."
             [(ngModel)]="search"
             name="search"
+            (input)="onSearchChange()"
           />
 
           <button
@@ -61,6 +84,14 @@
       </form>
     </div>
 
+    <div *ngIf="loading" class="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+      Cargando proveedores...
+    </div>
+
+    <div *ngIf="errorMessage" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+      {{ errorMessage }}
+    </div>
+
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm text-gray-700">
@@ -76,14 +107,14 @@
           </thead>
 
           <tbody>
-            <tr *ngIf="proveedores?.length === 0">
+            <tr *ngIf="!loading && filteredProveedores().length === 0">
               <td colspan="6" class="px-6 py-10 text-center text-gray-500">
                 No hay proveedores registrados.
               </td>
             </tr>
 
             <tr
-              *ngFor="let p of filteredProveedores()"
+              *ngFor="let p of paginatedProveedores()"
               class="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
               (click)="openDetalle(p)"
               role="button"
@@ -112,6 +143,7 @@
               <td class="px-6 py-4 text-right">
                 <div class="inline-flex items-center gap-2">
                   <button
+                    *ngIf="p.estatus === 'ACTIVO'"
                     type="button"
                     class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
@@ -122,13 +154,25 @@
                   </button>
 
                   <button
+                    *ngIf="p.estatus === 'ACTIVO'"
                     type="button"
                     class="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700
                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300
                            font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
                     (click)="onEliminar(p); $event.stopPropagation()"
                   >
-                    Eliminar
+                    Inactivar
+                  </button>
+
+                  <button
+                    *ngIf="p.estatus === 'INACTIVO'"
+                    type="button"
+                    class="text-white bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700
+                           hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-emerald-300
+                           font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
+                    (click)="onReactivar(p); $event.stopPropagation()"
+                  >
+                    Reactivar
                   </button>
                 </div>
               </td>
@@ -138,8 +182,50 @@
       </div>
 
       <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-xs text-gray-600">
-        <span>Total: <span class="font-semibold">{{ filteredProveedores().length || 0 }}</span></span>
+        <span>
+          Mostrando:
+          <span class="font-semibold">{{ inicioRango }}</span> -
+          <span class="font-semibold">{{ finRango }}</span>
+          de <span class="font-semibold">{{ filteredProveedores().length || 0 }}</span>
+        </span>
         <span class="text-gray-400">Robledo FleetOps</span>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="text-xs text-gray-600">
+        Página <span class="font-semibold">{{ page }}</span> / {{ totalPages }}
+      </div>
+
+      <div class="flex items-center gap-2">
+        <select
+          class="rounded-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          [(ngModel)]="pageSize"
+          (ngModelChange)="cambiarPageSize()"
+        >
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+        </select>
+
+        <button
+          type="button"
+          class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          (click)="prevPage()"
+          [disabled]="page === 1"
+        >
+          Anterior
+        </button>
+
+        <button
+          type="button"
+          class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          (click)="nextPage()"
+          [disabled]="page >= totalPages"
+        >
+          Siguiente
+        </button>
       </div>
     </div>
 

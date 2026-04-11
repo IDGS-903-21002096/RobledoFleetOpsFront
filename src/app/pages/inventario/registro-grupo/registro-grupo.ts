@@ -1,17 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
-
-interface GrupoInventario {
-  id: number;
-  nombre: string;
-}
-
-const LS_KEY = 'robledo_inventario_grupos';
+import {
+  GruposInventarioService
+} from '../../../../services/grupos-inventario.service';
 
 @Component({
   selector: 'app-registro-grupo',
@@ -21,29 +17,25 @@ const LS_KEY = 'robledo_inventario_grupos';
   styleUrl: './registro-grupo.scss',
 })
 export class RegistroGrupoComponent implements OnInit {
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private gruposInventarioService = inject(GruposInventarioService);
+
   editId: number | null = null;
 
   nombre = '';
   touchedNombre = false;
 
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute
-  ) {}
+  loading = false;
+  saving = false;
+  errorMessage = '';
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     this.editId = idParam ? Number(idParam) : null;
 
     if (this.editId !== null && !Number.isNaN(this.editId)) {
-      const grupos = this.cargar();
-      const found = grupos.find(g => g.id === this.editId);
-
-      if (found) {
-        this.nombre = found.nombre;
-      } else {
-        this.router.navigate(['/inventario/grupos']);
-      }
+      this.cargarGrupo(this.editId);
     } else {
       this.editId = null;
     }
@@ -59,53 +51,66 @@ export class RegistroGrupoComponent implements OnInit {
 
   onGuardar(): void {
     this.touchedNombre = true;
-    if (!this.nombreValido) return;
+    this.errorMessage = '';
 
-    const grupos = this.cargar();
-    const nombreUpper = this.nombre.trim().toUpperCase();
+    if (!this.nombreValido || this.saving) return;
 
-    const duplicado = grupos.some(g =>
-      g.nombre.toUpperCase() === nombreUpper && g.id !== this.editId
-    );
-    if (duplicado) {
-      alert('Ese nombre de grupo ya existe.');
-      return;
-    }
+    const payloadNombre = this.nombre.trim().toUpperCase();
+
+    this.saving = true;
 
     if (this.editId !== null) {
-      const idx = grupos.findIndex(g => g.id === this.editId);
-      if (idx >= 0) {
-        grupos[idx] = { id: this.editId, nombre: nombreUpper };
-      } else {
-        alert('No se encontró el grupo a actualizar.');
-        this.router.navigate(['/inventario/grupos']);
-        return;
-      }
+      this.gruposInventarioService.editarGrupo({
+        id: this.editId,
+        nombre: payloadNombre
+      }).subscribe({
+        next: () => {
+          this.saving = false;
+          this.router.navigate(['/inventario/grupos']);
+        },
+        error: (error) => {
+          console.error('Error al actualizar grupo:', error);
+          this.errorMessage = error?.error?.mensaje || 'No se pudo actualizar el grupo.';
+          this.saving = false;
+        }
+      });
     } else {
-      const nextId = this.nextId(grupos);
-      grupos.push({ id: nextId, nombre: nombreUpper });
+      this.gruposInventarioService.crearGrupo({
+        nombre: payloadNombre
+      }).subscribe({
+        next: () => {
+          this.saving = false;
+          this.router.navigate(['/inventario/grupos']);
+        },
+        error: (error) => {
+          console.error('Error al crear grupo:', error);
+          this.errorMessage = error?.error?.mensaje || 'No se pudo crear el grupo.';
+          this.saving = false;
+        }
+      });
     }
-
-    this.guardar(grupos);
-    this.router.navigate(['/inventario/grupos']);
   }
 
-  private cargar(): GrupoInventario[] {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      return raw ? (JSON.parse(raw) as GrupoInventario[]) : [];
-    } catch {
-      return [];
-    }
-  }
+  private cargarGrupo(id: number): void {
+    this.loading = true;
+    this.errorMessage = '';
 
-  private guardar(grupos: GrupoInventario[]): void {
-    localStorage.setItem(LS_KEY, JSON.stringify(grupos));
-  }
+    this.gruposInventarioService.getGrupoById(id).subscribe({
+      next: (grupo) => {
+        this.nombre = grupo.nombre ?? '';
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar grupo:', error);
+        this.loading = false;
 
-  private nextId(grupos: GrupoInventario[]): number {
-    let max = 0;
-    for (const g of grupos) if (g.id > max) max = g.id;
-    return max + 1;
+        if (error?.status === 404) {
+          this.router.navigate(['/inventario/grupos']);
+          return;
+        }
+
+        this.errorMessage = error?.error?.mensaje || 'No se pudo cargar la información del grupo.';
+      }
+    });
   }
 }

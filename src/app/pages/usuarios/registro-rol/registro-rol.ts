@@ -1,31 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
-
-type ModuloKey =
-  | 'usuarios'
-  | 'roles'
-  | 'vehiculos'
-  | 'inventario'
-  | 'mantenimientos'
-  | 'proveedores';
-
-interface PermisoDef {
-  code: string;
-  label: string;
-  help: string;
-}
-
-interface ModuloPermisos {
-  key: ModuloKey;
-  titulo: string;
-  descripcion: string;
-  permisos: PermisoDef[];
-}
+import {
+  RolesService,
+  Rol,
+  GuardarRolRequest,
+  CatalogoPermisos,
+} from '../../../../services/roles.service';
 
 interface RolFormModel {
   id: number | null;
@@ -33,14 +18,6 @@ interface RolFormModel {
   descripcion: string;
   activo: boolean;
   permisos: string[];
-}
-
-interface RolMock {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  permisos: string[];
-  activo: boolean;
 }
 
 @Component({
@@ -51,23 +28,18 @@ interface RolMock {
   styleUrl: './registro-rol.scss',
 })
 export class RegistroRolComponent implements OnInit {
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router
-  ) {}
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private rolesService = inject(RolesService);
 
-  // =========================
-  // Mode
-  // =========================
   isEditMode: boolean = false;
   submitted: boolean = false;
-
-  // Para reglas de sistema (ej. Admin)
   isSystemAdminRole: boolean = false;
 
-  // =========================
-  // Form
-  // =========================
+  loading: boolean = false;
+  saving: boolean = false;
+  errorMessage: string = '';
+
   form: RolFormModel = {
     id: null,
     nombre: '',
@@ -76,157 +48,19 @@ export class RegistroRolComponent implements OnInit {
     permisos: [],
   };
 
-  // =========================
-  // Mock roles (por ahora)
-  // =========================
-  private rolesMock: RolMock[] = [
-    {
-      id: 1,
-      nombre: 'Administrador',
-      descripcion: 'Acceso total al sistema. Puede realizar cualquier acción.',
-      permisos: [
-        'usuarios.ver', 'usuarios.crear', 'usuarios.editar', 'usuarios.eliminar',
-        'roles.ver', 'roles.crear', 'roles.editar', 'roles.eliminar',
-        'vehiculos.ver', 'vehiculos.crear', 'vehiculos.editar', 'vehiculos.eliminar', 'vehiculos.documentos.cargar',
-        'inventario.ver', 'inventario.crear', 'inventario.editar', 'inventario.eliminar',
-        'mantenimientos.ver', 'mantenimientos.crear', 'mantenimientos.editar', 'mantenimientos.aprobar', 'mantenimientos.cerrar',
-        'proveedores.ver', 'proveedores.crear', 'proveedores.editar', 'proveedores.eliminar',
-      ],
-      activo: true,
-    },
-    {
-      id: 2,
-      nombre: 'Gerencia',
-      descripcion: 'Consulta información y puede solicitar/aprobar mantenimientos.',
-      permisos: [
-        'usuarios.ver',
-        'roles.ver',
-        'vehiculos.ver',
-        'inventario.ver',
-        'mantenimientos.ver',
-        'mantenimientos.crear',
-        'mantenimientos.aprobar',
-        'proveedores.ver',
-      ],
-      activo: true,
-    },
-    {
-      id: 3,
-      nombre: 'Monitoreo',
-      descripcion: 'Solo consulta información del sistema.',
-      permisos: [
-        'usuarios.ver',
-        'roles.ver',
-        'vehiculos.ver',
-        'inventario.ver',
-        'mantenimientos.ver',
-        'proveedores.ver',
-      ],
-      activo: true,
-    },
-  ];
+  modulos: CatalogoPermisos[] = [];
 
-  // =========================
-  // Catálogo permisos
-  // =========================
-  modulos: ModuloPermisos[] = [
-    {
-      key: 'usuarios',
-      titulo: 'Usuarios',
-      descripcion: 'Gestión de usuarios del sistema.',
-      permisos: [
-        { code: 'usuarios.ver', label: 'Ver', help: 'Consultar listado y detalle.' },
-        { code: 'usuarios.crear', label: 'Crear', help: 'Registrar nuevos usuarios.' },
-        { code: 'usuarios.editar', label: 'Editar', help: 'Modificar información de usuarios.' },
-        { code: 'usuarios.eliminar', label: 'Eliminar', help: 'Eliminar/dar de baja usuarios.' },
-      ],
-    },
-    {
-      key: 'roles',
-      titulo: 'Roles',
-      descripcion: 'Definición de roles y permisos.',
-      permisos: [
-        { code: 'roles.ver', label: 'Ver', help: 'Consultar roles existentes.' },
-        { code: 'roles.crear', label: 'Crear', help: 'Crear nuevos roles.' },
-        { code: 'roles.editar', label: 'Editar', help: 'Modificar roles y permisos.' },
-        { code: 'roles.eliminar', label: 'Eliminar', help: 'Eliminar roles (si aplica).' },
-      ],
-    },
-    {
-      key: 'vehiculos',
-      titulo: 'Vehículos',
-      descripcion: 'Gestión y control de unidades.',
-      permisos: [
-        { code: 'vehiculos.ver', label: 'Ver', help: 'Consultar listado y detalle.' },
-        { code: 'vehiculos.crear', label: 'Crear', help: 'Registrar nuevas unidades.' },
-        { code: 'vehiculos.editar', label: 'Editar', help: 'Modificar información de unidades.' },
-        { code: 'vehiculos.eliminar', label: 'Eliminar', help: 'Eliminar/dar de baja unidades.' },
-        { code: 'vehiculos.documentos.cargar', label: 'Documentos', help: 'Cargar/gestionar documentos.' },
-      ],
-    },
-    {
-      key: 'inventario',
-      titulo: 'Inventario',
-      descripcion: 'Artículos, existencias y costos.',
-      permisos: [
-        { code: 'inventario.ver', label: 'Ver', help: 'Consultar inventario.' },
-        { code: 'inventario.crear', label: 'Crear', help: 'Registrar artículos.' },
-        { code: 'inventario.editar', label: 'Editar', help: 'Modificar artículos.' },
-        { code: 'inventario.eliminar', label: 'Eliminar', help: 'Eliminar artículos.' },
-      ],
-    },
-    {
-      key: 'mantenimientos',
-      titulo: 'Mantenimientos',
-      descripcion: 'Solicitudes, órdenes y seguimiento.',
-      permisos: [
-        { code: 'mantenimientos.ver', label: 'Ver', help: 'Consultar mantenimientos.' },
-        { code: 'mantenimientos.crear', label: 'Solicitar', help: 'Crear solicitudes de mantenimiento.' },
-        { code: 'mantenimientos.editar', label: 'Editar', help: 'Modificar información del mantenimiento.' },
-        { code: 'mantenimientos.aprobar', label: 'Aprobar', help: 'Autorizar solicitudes (Gerencia).' },
-        { code: 'mantenimientos.cerrar', label: 'Cerrar', help: 'Finalizar mantenimientos (Taller).' },
-      ],
-    },
-    {
-      key: 'proveedores',
-      titulo: 'Proveedores',
-      descripcion: 'Gestión y administración de proveedores.',
-      permisos: [
-        { code: 'proveedores.ver', label: 'Ver', help: 'Consultar listado y detalle.' },
-        { code: 'proveedores.crear', label: 'Crear', help: 'Registrar nuevos proveedores.' },
-        { code: 'proveedores.editar', label: 'Editar', help: 'Modificar información de proveedores.' },
-        { code: 'proveedores.eliminar', label: 'Eliminar', help: 'Eliminar/dar de baja proveedores.' },
-      ],
-    },
-  ];
-
-  // =========================
-  // Lifecycle
-  // =========================
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
+    this.isEditMode = !!idParam;
 
-    if (idParam) {
-      const id = Number(idParam);
-      this.isEditMode = true;
-      this.loadRolForEdit(id);
-    } else {
-      this.isEditMode = false;
-      this.isSystemAdminRole = false;
-      this.resetFormForCreate();
-    }
+    this.cargarPantalla(idParam ? Number(idParam) : null);
   }
 
-  // =========================
-  // Computed
-  // =========================
   get selectedCount(): number {
     return this.form.permisos.length;
   }
 
-  // =========================
-  // Helpers
-  // =========================
   private normalize(text: string): string {
     return (text || '')
       .toLowerCase()
@@ -241,6 +75,8 @@ export class RegistroRolComponent implements OnInit {
 
   private resetFormForCreate(): void {
     this.submitted = false;
+    this.isSystemAdminRole = false;
+
     this.form = {
       id: null,
       nombre: '',
@@ -250,34 +86,58 @@ export class RegistroRolComponent implements OnInit {
     };
   }
 
-  private loadRolForEdit(id: number): void {
-    const found = this.rolesMock.find((r) => r.id === id);
+  private cargarPantalla(id: number | null): void {
+    this.loading = true;
+    this.errorMessage = '';
 
-    if (!found) {
-      this.router.navigate(['/usuarios/roles']);
-      return;
-    }
+    this.rolesService.getCatalogoPermisos().subscribe({
+      next: (catalogo) => {
+        this.modulos = catalogo ?? [];
 
-    this.submitted = false;
-
-    this.form = {
-      id: found.id,
-      nombre: found.nombre,
-      descripcion: found.descripcion,
-      activo: found.activo,
-      permisos: [...found.permisos],
-    };
-
-    this.isSystemAdminRole = this.isAdminNombre(found.nombre);
-
-    if (this.isSystemAdminRole) {
-      this.form.activo = true;
-    }
+        if (id) {
+          this.cargarRolParaEdicion(id);
+        } else {
+          this.resetFormForCreate();
+          this.loading = false;
+        }
+      },
+      error: (error) => {
+        console.error('Error al cargar catálogo de permisos:', error);
+        this.errorMessage = 'No se pudo cargar el catálogo de permisos.';
+        this.loading = false;
+      },
+    });
   }
 
-  // =========================
-  // Permisos
-  // =========================
+  private cargarRolParaEdicion(id: number): void {
+    this.rolesService.getRolById(id).subscribe({
+      next: (rol: Rol) => {
+        this.submitted = false;
+
+        this.form = {
+          id: rol.id,
+          nombre: rol.nombre,
+          descripcion: rol.descripcion,
+          activo: rol.activo,
+          permisos: [...rol.permisos],
+        };
+
+        this.isSystemAdminRole = !!rol.esSistema || this.isAdminNombre(rol.nombre);
+
+        if (this.isSystemAdminRole) {
+          this.form.activo = true;
+        }
+
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar rol para edición:', error);
+        this.errorMessage = 'No se pudo cargar la información del rol.';
+        this.loading = false;
+      },
+    });
+  }
+
   hasPermiso(code: string): boolean {
     return this.form.permisos.includes(code);
   }
@@ -290,7 +150,7 @@ export class RegistroRolComponent implements OnInit {
     }
   }
 
-  selectAll(modKey: ModuloKey): void {
+  selectAll(modKey: string): void {
     const mod = this.modulos.find((m) => m.key === modKey);
     if (!mod) return;
 
@@ -299,7 +159,7 @@ export class RegistroRolComponent implements OnInit {
     this.form.permisos = Array.from(set);
   }
 
-  clearAll(modKey: ModuloKey): void {
+  clearAll(modKey: string): void {
     const mod = this.modulos.find((m) => m.key === modKey);
     if (!mod) return;
 
@@ -307,15 +167,14 @@ export class RegistroRolComponent implements OnInit {
     this.form.permisos = this.form.permisos.filter((p) => !remove.has(p));
   }
 
-  // =========================
-  // Navigation / Save
-  // =========================
   onRegresar(): void {
+    if (this.saving) return;
     this.router.navigate(['/usuarios/roles']);
   }
 
   onGuardar(): void {
     this.submitted = true;
+    this.errorMessage = '';
 
     if (!this.form.nombre || !this.form.nombre.trim()) return;
 
@@ -323,15 +182,30 @@ export class RegistroRolComponent implements OnInit {
       this.form.activo = true;
     }
 
-    const payload: RolFormModel = {
-      ...this.form,
+    const payload: GuardarRolRequest = {
+      id: this.isEditMode ? this.form.id : null,
       nombre: this.form.nombre.trim(),
       descripcion: (this.form.descripcion || '').trim(),
+      activo: this.form.activo,
       permisos: [...this.form.permisos].sort(),
     };
 
-    console.log('[RegistroRol] Guardar:', payload);
+    this.saving = true;
 
-    this.router.navigate(['/usuarios/roles']);
+    const request$ = this.isEditMode
+      ? this.rolesService.editarRol(payload)
+      : this.rolesService.crearRol(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.saving = false;
+        this.router.navigate(['/usuarios/roles']);
+      },
+      error: (error) => {
+        console.error('Error al guardar rol:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudo guardar el rol.';
+        this.saving = false;
+      },
+    });
   }
 }

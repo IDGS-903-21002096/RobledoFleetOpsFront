@@ -1,21 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import { RolesService, Rol } from '../../../../services/roles.service';
 
 type EstadoFiltro = 'TODOS' | 'ACTIVO' | 'INACTIVO';
-
-interface Rol {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  permisos: string[];
-  activo: boolean;
-  esSistema?: boolean;
-}
 
 @Component({
   selector: 'app-roles',
@@ -24,82 +16,60 @@ interface Rol {
   templateUrl: './roles.html',
   styleUrl: './roles.scss',
 })
-export class RolesComponent {
-  constructor(private router: Router) {}
+export class RolesComponent implements OnInit {
+  private router = inject(Router);
+  private rolesService = inject(RolesService);
 
-  // =========================
-  // UI State
-  // =========================
   search: string = '';
   estadoFiltro: EstadoFiltro = 'TODOS';
 
   isDetalleOpen: boolean = false;
   selectedRol: Rol | null = null;
 
-  // =========================
-  // Mock data
-  // =========================
-  roles: Rol[] = [
-    {
-      id: 1,
-      nombre: 'Administrador',
-      descripcion: 'Acceso total al sistema. Puede realizar cualquier acción.',
-      permisos: [
-        'usuarios.ver',
-        'usuarios.crear',
-        'usuarios.editar',
-        'usuarios.eliminar',
-        'roles.ver',
-        'roles.crear',
-        'roles.editar',
-        'roles.eliminar',
-        'vehiculos.ver',
-        'vehiculos.crear',
-        'vehiculos.editar',
-        'vehiculos.eliminar',
-        'vehiculos.documentos.cargar',
-        'inventario.ver',
-        'inventario.crear',
-        'inventario.editar',
-        'inventario.eliminar',
-        'mantenimientos.ver',
-        'mantenimientos.crear',
-        'mantenimientos.editar',
-        'mantenimientos.aprobar',
-        'mantenimientos.cerrar',
-      ],
-      activo: true,
-      esSistema: true,
-    },
-    {
-      id: 2,
-      nombre: 'Gerencia',
-      descripcion: 'Consulta información y puede solicitar/aprobar mantenimientos.',
-      permisos: [
-        'usuarios.ver',
-        'roles.ver',
-        'vehiculos.ver',
-        'inventario.ver',
-        'mantenimientos.ver',
-        'mantenimientos.crear',
-        'mantenimientos.aprobar',
-      ],
-      activo: true,
-      esSistema: false,
-    },
-    {
-      id: 3,
-      nombre: 'Monitoreo',
-      descripcion: 'Solo consulta información del sistema.',
-      permisos: ['usuarios.ver', 'roles.ver', 'vehiculos.ver', 'inventario.ver', 'mantenimientos.ver'],
-      activo: true,
-      esSistema: false,
-    },
-  ];
+  loading: boolean = false;
+  errorMessage: string = '';
 
-  // =========================
-  // Helpers
-  // =========================
+  roles: Rol[] = [];
+
+  ngOnInit(): void {
+    this.cargarRoles();
+  }
+
+  cargarRoles(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.rolesService.getRoles().subscribe({
+      next: (data) => {
+        this.roles = data ?? [];
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar roles:', error);
+        this.errorMessage = this.getLoadErrorMessage(error, 'los roles');
+        this.loading = false;
+      }
+    });
+  }
+
+  private getLoadErrorMessage(error: any, recurso: string): string {
+    const status = error?.status;
+
+    if (status === 403) {
+      return `Tu rol no tiene acceso a ${recurso}.`;
+    }
+
+    if (status === 401) {
+      return 'Tu sesión no es válida o ha expirado. Inicia sesión nuevamente.';
+    }
+
+    if (status === 0) {
+      return 'No fue posible conectar con el servidor.';
+    }
+
+    return `No se pudo cargar ${recurso}.`;
+  }
+
   private normalize(text: string): string {
     return (text || '')
       .toLowerCase()
@@ -116,9 +86,6 @@ export class RolesComponent {
     return !!rol.esSistema || this.isAdminRol(rol);
   }
 
-  // =========================
-  // UI actions
-  // =========================
   filteredRoles(): Rol[] {
     const q = this.normalize(this.search);
 
@@ -129,7 +96,7 @@ export class RolesComponent {
 
         if (!q) return true;
 
-        const haystack = this.normalize(`${r.nombre} ${r.descripcion}`);
+        const haystack = this.normalize(`${r.nombre} ${r.descripcion} ${r.permisos.join(' ')}`);
         return haystack.includes(q);
       })
       .sort((a, b) => {
@@ -169,7 +136,23 @@ export class RolesComponent {
       return;
     }
 
-    r.activo = !r.activo;
-    console.log('[Roles] Estado actualizado:', r.nombre, r.activo ? 'Activo' : 'Inactivo');
+    const accion = r.activo ? 'desactivar' : 'activar';
+    const confirmar = confirm(`¿Deseas ${accion} el rol "${r.nombre}"?`);
+
+    if (!confirmar) return;
+
+    this.rolesService.toggleEstadoRol(r.id).subscribe({
+      next: () => {
+        this.cargarRoles();
+
+        if (this.selectedRol?.id === r.id) {
+          this.closeDetalle();
+        }
+      },
+      error: (error) => {
+        console.error('Error al cambiar estado del rol:', error);
+        alert(error?.error?.mensaje || 'No se pudo cambiar el estado del rol.');
+      }
+    });
   }
 }

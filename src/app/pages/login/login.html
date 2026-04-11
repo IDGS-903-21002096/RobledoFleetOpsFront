@@ -9,9 +9,10 @@
   <div class="relative w-full max-w-sm rounded-2xl p-[2px]
            bg-gradient-to-r from-cyan-400 via-violet-400 to-blue-400
            shadow-[0_0_40px_rgba(99,102,241,0.35)]">
-    <form class="relative rounded-2xl bg-[#0B1226]/95 backdrop-blur
-             p-6 shadow-xl">
-
+    <form
+      class="relative rounded-2xl bg-[#0B1226]/95 backdrop-blur p-6 shadow-xl"
+      (ngSubmit)="onLogin()"
+    >
       <div class="mb-6 text-center">
         <img src="img/robledoco2.png" alt="Robledo & Co" class="h-16 w-auto object-contain mx-auto drop-shadow" />
         <h1 class="mt-2 text-xl font-bold text-white">
@@ -22,32 +23,60 @@
         </p>
       </div>
 
+      <div
+        *ngIf="errorMessage"
+        class="mb-4 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+      >
+        {{ errorMessage }}
+      </div>
+
       <div class="mb-4">
         <label for="email" class="mb-2 block text-sm font-medium text-blue-100">
           Correo
         </label>
-        <input type="email" id="email" class="block w-full rounded-xl border border-white/20
+        <input
+          type="email"
+          id="email"
+          name="email"
+          [(ngModel)]="email"
+          class="block w-full rounded-xl border border-white/20
                  bg-white/10 px-4 py-2.5 text-sm text-white
                  placeholder-blue-200
                  focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/40
-                 outline-none transition" placeholder="correo@empresa.com" required />
+                 outline-none transition"
+          placeholder="correo@empresa.com"
+          required
+        />
       </div>
 
       <div class="mb-4">
         <label for="password" class="mb-2 block text-sm font-medium text-blue-100">
           Contraseña
         </label>
-        <input type="password" id="password" class="block w-full rounded-xl border border-white/20
+        <input
+          type="password"
+          id="password"
+          name="password"
+          [(ngModel)]="password"
+          class="block w-full rounded-xl border border-white/20
                  bg-white/10 px-4 py-2.5 text-sm text-white
                  placeholder-blue-200
                  focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/40
-                 outline-none transition" placeholder="••••••••" required />
+                 outline-none transition"
+          placeholder="••••••••"
+          required
+        />
       </div>
 
       <div class="mb-5 flex items-start">
-        <input id="remember" type="checkbox" class="mt-1 h-4 w-4 rounded
-                 border-white/30 bg-transparent
-                 text-cyan-400 focus:ring-cyan-400" />
+        <input
+          id="remember"
+          name="remember"
+          type="checkbox"
+          [(ngModel)]="aceptaTerminos"
+          class="mt-1 h-4 w-4 rounded border-white/30 bg-transparent
+                 text-cyan-400 focus:ring-cyan-400"
+        />
         <label for="remember" class="ml-2 text-sm text-blue-200">
           Acepto los
           <a href="#" class="font-medium text-cyan-300 hover:underline">
@@ -56,14 +85,16 @@
         </label>
       </div>
 
-      <button type="button" routerLink="/inicio" class="w-full rounded-xl
-               bg-gradient-to-r from-violet-400 to-cyan-400
+      <button
+        type="submit"
+        class="w-full rounded-xl bg-gradient-to-r from-violet-400 to-cyan-400
                px-4 py-2.5 text-sm font-semibold text-[#081028]
-               shadow-lg shadow-cyan-400/30
-               hover:brightness-110
+               shadow-lg shadow-cyan-400/30 hover:brightness-110
                focus:outline-none focus:ring-4 focus:ring-cyan-400/40
-               transition">
-        Iniciar sesión
+               transition disabled:opacity-60 disabled:cursor-not-allowed"
+        [disabled]="loading"
+      >
+        {{ loading ? 'Ingresando...' : 'Iniciar sesión' }}
       </button>
     </form>
   </div>

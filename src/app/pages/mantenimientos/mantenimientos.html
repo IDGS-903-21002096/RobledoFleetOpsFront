@@ -36,10 +36,24 @@
       </div>
     </div>
 
+    <div
+      *ngIf="errorMessage"
+      class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+    >
+      {{ errorMessage }}
+    </div>
+
+    <div
+      *ngIf="successMessage"
+      class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700"
+    >
+      {{ successMessage }}
+    </div>
+
     <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div></div>
 
-      <form class="w-full md:max-w-md">
+      <form class="w-full md:max-w-md" (submit)="$event.preventDefault()">
         <label for="searchMantenimientos" class="sr-only">Buscar</label>
         <div class="relative">
           <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
@@ -69,6 +83,7 @@
             placeholder="Buscar orden, unidad, tipo, estatus, km, costo..."
             [(ngModel)]="search"
             name="search"
+            (input)="onSearchChange()"
           />
 
           <button
@@ -91,83 +106,107 @@
         <table class="w-full text-left text-sm text-gray-700">
           <thead class="bg-gray-50 text-xs uppercase text-gray-600">
             <tr>
-              <th scope="col" class="px-6 py-4">Orden</th>
-              <th scope="col" class="px-6 py-4">Fecha</th>
-              <th scope="col" class="px-6 py-4">Unidad</th>
-              <th scope="col" class="px-6 py-4">Tipo</th>
-              <th scope="col" class="px-6 py-4">Servicio</th>
-              <th scope="col" class="px-6 py-4">Kilometraje</th>
-              <th scope="col" class="px-6 py-4">Estatus</th>
-              <th scope="col" class="px-6 py-4">Costo final</th>
-              <th scope="col" class="px-6 py-4 text-right">Acciones</th>
+              <th scope="col" class="px-6 py-4 w-[150px]">Orden</th>
+              <th scope="col" class="px-6 py-4 w-[120px]">Fecha</th>
+              <th scope="col" class="px-6 py-4 w-[130px]">Unidad</th>
+              <th scope="col" class="px-6 py-4 w-[120px]">Tipo</th>
+              <th scope="col" class="px-6 py-4 w-[150px]">Servicio</th>
+              <th scope="col" class="px-6 py-4 w-[130px]">Kilometraje</th>
+              <th scope="col" class="px-6 py-4 w-[120px]">Estatus</th>
+              <th scope="col" class="px-6 py-4 w-[130px]">Costo final</th>
+              <th scope="col" class="px-6 py-4 text-right w-[310px]">Acciones</th>
             </tr>
           </thead>
 
           <tbody>
-            <tr *ngIf="mantenimientos?.length === 0">
+            <tr *ngIf="loading">
+              <td colspan="9" class="px-6 py-10 text-center text-gray-500">
+                Cargando mantenimientos...
+              </td>
+            </tr>
+
+            <tr *ngIf="!loading && filteredMantenimientos().length === 0">
               <td colspan="9" class="px-6 py-10 text-center text-gray-500">
                 No hay mantenimientos registrados.
               </td>
             </tr>
 
             <tr
-              *ngFor="let m of filteredMantenimientos()"
+              *ngFor="let m of paginatedMantenimientos(); trackBy: trackByMantenimientoId"
               class="border-t border-gray-100 hover:bg-gray-50"
             >
-              <td class="px-6 py-4">
-                <div class="font-semibold text-gray-900">{{ m.noOrden || ('#' + m.id) }}</div>
+              <td class="px-6 py-4 align-middle">
+                <div class="font-semibold text-gray-900 break-words">{{ m.noOrden || ('#' + m.id) }}</div>
                 <div class="text-xs text-gray-500">ID: {{ m.id }}</div>
               </td>
 
-              <td class="px-6 py-4">
-                {{ m.fecha }}
+              <td class="px-6 py-4 align-middle whitespace-nowrap">
+                {{ m.fecha | date:'yyyy-MM-dd' }}
               </td>
 
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 align-middle">
                 <div class="font-semibold text-gray-900">{{ m.unidad }}</div>
-                <div class="text-xs text-gray-500">Unidad ID: {{ m.unidadId }}</div>
+                <div class="text-xs text-gray-500">Unidad ID: {{ m.vehiculoId }}</div>
               </td>
 
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 align-middle">
                 {{ m.tipoServicio }}
               </td>
 
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 align-middle">
                 {{ m.nivelServicio }}
               </td>
 
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 align-middle whitespace-nowrap">
                 {{ m.kilometraje ?? '—' }}
               </td>
 
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 align-middle whitespace-nowrap">
                 <span
                   class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-                  [ngClass]="
-                    m.estatus === 'Terminado'
-                      ? 'bg-green-100 text-green-700'
-                      : (m.estatus === 'Cancelado'
-                          ? 'bg-red-100 text-red-700'
-                          : (m.estatus === 'En proceso'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-yellow-100 text-yellow-800'))
-                  "
+                  [ngClass]="getEstatusClass(m.estatus)"
                 >
                   {{ m.estatus }}
                 </span>
               </td>
 
-              <td class="px-6 py-4">
-                {{ m.costoFinal !== undefined ? ('$' + (m.costoFinal | number:'1.2-2')) : '—' }}
+              <td class="px-6 py-4 align-middle whitespace-nowrap">
+                {{ m.costoFinal !== undefined && m.costoFinal !== null ? ('$' + (m.costoFinal | number:'1.2-2')) : '—' }}
               </td>
 
-              <td class="px-6 py-4 text-right">
-                <div class="inline-flex items-center gap-2">
+              <td class="px-6 py-4 align-middle text-right">
+                <div class="flex items-center justify-end gap-2 whitespace-nowrap">
+                  <button
+                    *ngIf="canMoveToEnProceso(m)"
+                    type="button"
+                    class="text-white bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700
+                           hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-amber-300
+                           font-semibold rounded-full text-xs px-3 py-2 shadow-sm
+                           disabled:opacity-60 disabled:cursor-not-allowed"
+                    [disabled]="processingStatusId === m.id"
+                    (click)="onCambiarEstatusRapido(m, 'En proceso')"
+                  >
+                    {{ processingStatusId === m.id ? 'Actualizando...' : 'En curso' }}
+                  </button>
+
+                  <button
+                    *ngIf="canMoveToFinalizado(m)"
+                    type="button"
+                    class="text-white bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700
+                           hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-emerald-300
+                           font-semibold rounded-full text-xs px-3 py-2 shadow-sm
+                           disabled:opacity-60 disabled:cursor-not-allowed"
+                    [disabled]="processingStatusId === m.id"
+                    (click)="onCambiarEstatusRapido(m, 'Finalizado')"
+                  >
+                    {{ processingStatusId === m.id ? 'Actualizando...' : 'Finalizar' }}
+                  </button>
+
                   <button
                     type="button"
                     class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-                           font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
+                           font-semibold rounded-full text-xs px-3 py-2 shadow-sm"
                     (click)="onEditar(m)"
                   >
                     Editar
@@ -177,7 +216,7 @@
                     type="button"
                     class="text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700
                            hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-red-300
-                           font-semibold rounded-full text-xs px-4 py-2 shadow-sm"
+                           font-semibold rounded-full text-xs px-3 py-2 shadow-sm"
                     (click)="onEliminar(m)"
                   >
                     Eliminar
@@ -191,8 +230,50 @@
       </div>
 
       <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-xs text-gray-600">
-        <span>Total: <span class="font-semibold">{{ filteredMantenimientos().length || 0 }}</span></span>
+        <span>
+          Mostrando:
+          <span class="font-semibold">{{ inicioRango }}</span> -
+          <span class="font-semibold">{{ finRango }}</span>
+          de <span class="font-semibold">{{ filteredMantenimientos().length || 0 }}</span>
+        </span>
         <span class="text-gray-400">Robledo FleetOps</span>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="text-xs text-gray-600">
+        Página <span class="font-semibold">{{ page }}</span> / {{ totalPages }}
+      </div>
+
+      <div class="flex items-center gap-2">
+        <select
+          class="rounded-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          [(ngModel)]="pageSize"
+          (ngModelChange)="cambiarPageSize()"
+        >
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+        </select>
+
+        <button
+          type="button"
+          class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          (click)="prevPage()"
+          [disabled]="page === 1"
+        >
+          Anterior
+        </button>
+
+        <button
+          type="button"
+          class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          (click)="nextPage()"
+          [disabled]="page >= totalPages"
+        >
+          Siguiente
+        </button>
       </div>
     </div>
   </div>

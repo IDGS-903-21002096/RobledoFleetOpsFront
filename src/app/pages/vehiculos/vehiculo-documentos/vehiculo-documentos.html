@@ -10,6 +10,9 @@
           <span class="text-slate-400">ID vehículo:</span>
           <span class="font-semibold text-slate-700">{{ vehiculoId ?? '—' }}</span>
         </p>
+        <p *ngIf="vehiculo" class="text-sm text-slate-600 mt-1">
+          {{ vehiculo.nombreVehiculo }} · {{ vehiculo.marca }} {{ vehiculo.modelo }}
+        </p>
       </div>
 
       <div class="flex items-center gap-2">
@@ -29,13 +32,27 @@
                  text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                  hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
                  font-semibold rounded-full text-sm px-5 py-2.5
-                 text-center leading-5 shadow transition active:scale-[0.98]"
+                 text-center leading-5 shadow transition active:scale-[0.98]
+                 disabled:opacity-60 disabled:cursor-not-allowed"
           (click)="addDocumento()"
+          [disabled]="loadingVehiculo || saving || !vehiculo"
         >
           <span class="text-base leading-none">+</span>
-          <span>Agregar documento</span>
+          <span>{{ modoEdicion ? 'Nuevo documento' : 'Agregar documento' }}</span>
         </button>
       </div>
+    </div>
+
+    <div *ngIf="loadingVehiculo" class="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+      Cargando información del vehículo...
+    </div>
+
+    <div *ngIf="errorMessage" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="modoEdicion" class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      Estás editando un documento existente. Al guardar, se actualizará el registro seleccionado.
     </div>
 
     <div class="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4">
@@ -47,7 +64,9 @@
 
     <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       <div class="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <p class="text-sm font-semibold text-gray-900">Carga de documentos</p>
+        <p class="text-sm font-semibold text-gray-900">
+          {{ modoEdicion ? 'Edición de documento' : 'Carga de documentos' }}
+        </p>
         <p class="text-xs text-gray-500">
           Total: <span class="font-semibold">{{ documentos.length }}</span>
         </p>
@@ -61,8 +80,10 @@
             class="mt-4 inline-flex items-center gap-2
                    text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                    hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-                   font-semibold rounded-full text-sm px-5 py-2.5 shadow transition active:scale-[0.98]"
+                   font-semibold rounded-full text-sm px-5 py-2.5 shadow transition active:scale-[0.98]
+                   disabled:opacity-60 disabled:cursor-not-allowed"
             (click)="addDocumento()"
+            [disabled]="loadingVehiculo || saving || !vehiculo"
           >
             <span class="text-base leading-none">+</span>
             <span>Agregar el primero</span>
@@ -185,22 +206,28 @@
                     Archivo * <span class="text-xs text-gray-400">(PDF o imagen)</span>
                   </label>
 
-                  <div class="flex flex-col gap-3 md:flex-row md:items-center">
-                    <input
-                      type="file"
-                      accept="application/pdf,image/*"
-                      (change)="onFileChange($event, d)"
-                      (blur)="d.touchedArchivo = true"
-                      class="block w-full text-sm text-gray-900
-                             file:mr-4 file:py-2 file:px-4
-                             file:rounded-full file:border-0
-                             file:text-sm file:font-semibold
-                             file:bg-blue-50 file:text-blue-700
-                             hover:file:bg-blue-100"
-                    />
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div class="flex flex-col gap-3 md:flex-row md:items-center">
+                      <input
+                        type="file"
+                        accept="application/pdf,image/*"
+                        (change)="onFileChange($event, d)"
+                        (blur)="d.touchedArchivo = true"
+                        class="block w-full text-sm text-gray-900
+                               file:mr-4 file:py-2.5 file:px-4
+                               file:rounded-full file:border-0
+                               file:text-sm file:font-semibold
+                               file:bg-blue-50 file:text-blue-700
+                               hover:file:bg-blue-100"
+                      />
+                    </div>
+
+                    <p class="mt-3 text-xs text-slate-500">
+                      Selecciona un PDF o imagen. En edición, puedes dejar el archivo actual o reemplazarlo por uno nuevo.
+                    </p>
                   </div>
 
-                  <p *ngIf="d.touchedArchivo && !d.archivo" class="mt-2 text-sm text-red-700">
+                  <p *ngIf="d.touchedArchivo && !d.dataUrl" class="mt-2 text-sm text-red-700">
                     <span class="font-medium">Oh, snap!</span> Selecciona un archivo.
                   </p>
 
@@ -227,7 +254,7 @@
                     <div class="mt-2 space-y-2 text-xs text-slate-600">
                       <div>
                         <span class="font-semibold">Archivo:</span>
-                        <span>{{ d.archivo?.name || '—' }}</span>
+                        <span>{{ d.archivo?.name || d.archivoNombreActual || '—' }}</span>
                       </div>
 
                       <div>
@@ -275,9 +302,9 @@
               class="inline-flex items-center justify-center rounded-full
                      bg-gray-200 hover:bg-gray-300 text-gray-800
                      text-sm font-semibold px-6 py-2.5 shadow-sm"
-              (click)="onRegresar()"
+              (click)="onCancelarFormulario()"
             >
-              Cancelar
+              {{ modoEdicion ? 'Cancelar edición' : 'Cancelar' }}
             </button>
 
             <button
@@ -285,10 +312,12 @@
               class="inline-flex items-center justify-center rounded-full
                      text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                      hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-                     text-sm font-semibold px-6 py-2.5 shadow transition active:scale-[0.98]"
+                     text-sm font-semibold px-6 py-2.5 shadow transition active:scale-[0.98]
+                     disabled:opacity-60 disabled:cursor-not-allowed"
               (click)="onGuardar()"
+              [disabled]="saving || loadingVehiculo || !vehiculo"
             >
-              Guardar documentos
+              {{ saving ? 'Guardando...' : (modoEdicion ? 'Actualizar documento' : 'Guardar documentos') }}
             </button>
           </div>
 
@@ -296,8 +325,9 @@
             <span class="font-medium">Oh, snap!</span> Revisa los documentos marcados en rojo.
           </p>
 
-          <p *ngIf="submitAttempted && isValidForm()" class="mt-3 text-sm text-green-700">
-            <span class="font-medium">Bien hecho.</span> Documentos listos para guardar.
+          <p *ngIf="submitAttempted && isValidForm() && !saving" class="mt-3 text-sm text-green-700">
+            <span class="font-medium">Bien hecho.</span>
+            {{ modoEdicion ? 'Documento listo para actualizar.' : 'Documentos listos para guardar.' }}
           </p>
         </div>
       </div>
@@ -310,23 +340,27 @@
 
     <div class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div class="border-b border-gray-100 px-6 py-4">
-        <p class="text-sm font-semibold text-gray-900">Historial (mock)</p>
-        <p class="text-xs text-gray-500">Documentos ya guardados (con ver/descargar/eliminar).</p>
+        <p class="text-sm font-semibold text-gray-900">Historial</p>
+        <p class="text-xs text-gray-500">Documentos guardados para esta unidad.</p>
       </div>
 
       <div class="p-6">
-        <div *ngIf="historial.length === 0" class="text-sm text-gray-600">
+        <div *ngIf="loadingHistorial" class="text-sm text-blue-700">
+          Cargando historial...
+        </div>
+
+        <div *ngIf="!loadingHistorial && historial.length === 0" class="text-sm text-gray-600">
           No hay documentos previos.
         </div>
 
-        <div *ngIf="historial.length > 0" class="overflow-x-auto">
+        <div *ngIf="!loadingHistorial && historial.length > 0" class="overflow-x-auto">
           <table class="w-full text-left text-sm text-gray-700">
             <thead class="bg-gray-50 text-xs uppercase text-gray-600">
               <tr>
                 <th class="px-4 py-3">Documento</th>
                 <th class="px-4 py-3">Tipo</th>
-                <th class="px-4 py-3">Archivo</th>
                 <th class="px-4 py-3">Fecha</th>
+                <th class="px-4 py-3">Fecha vencimiento</th>
                 <th class="px-4 py-3">Estatus</th>
                 <th class="px-4 py-3">Acciones</th>
               </tr>
@@ -335,8 +369,12 @@
               <tr *ngFor="let h of historial" class="border-t border-gray-100 hover:bg-gray-50">
                 <td class="px-4 py-3 font-semibold text-gray-900">{{ h.nombre }}</td>
                 <td class="px-4 py-3">{{ h.tipo || '—' }}</td>
-                <td class="px-4 py-3">{{ h.archivoNombre }}</td>
-                <td class="px-4 py-3">{{ h.fecha }}</td>
+                <td class="px-4 py-3">
+                  {{ h.fechaDocumento ? (h.fechaDocumento | date:'yyyy-MM-dd') : '—' }}
+                </td>
+                <td class="px-4 py-3">
+                  {{ h.tipo === 'Póliza de seguro' && h.vencimientoPoliza ? (h.vencimientoPoliza | date:'yyyy-MM-dd') : '—' }}
+                </td>
                 <td class="px-4 py-3">
                   <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-green-100 text-green-700">
                     CARGADO
@@ -344,6 +382,16 @@
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center rounded-full
+                             bg-amber-50 hover:bg-amber-100 text-amber-700
+                             text-xs font-semibold px-4 py-2 shadow-sm"
+                      (click)="editarHistorial(h)"
+                    >
+                      Editar
+                    </button>
+
                     <button
                       type="button"
                       class="inline-flex items-center justify-center rounded-full
@@ -426,11 +474,11 @@
       </div>
 
       <div *ngIf="!isPdfMime(previewDoc.mimeType)" class="rounded-2xl border border-gray-200 overflow-hidden bg-gray-50">
-        <img [src]="previewDoc.dataUrl" alt="Previsualización" class="w-full max-h-[70vh] object-contain" />
+        <img [src]="previewDoc.archivoUrl" alt="Previsualización" class="w-full max-h-[70vh] object-contain" />
       </div>
 
       <p class="mt-3 text-xs text-gray-500">
-        *Vista previa en modo prueba usando base64 (DataURL).
+        Vista previa del documento guardado.
       </p>
     </div>
   </div>

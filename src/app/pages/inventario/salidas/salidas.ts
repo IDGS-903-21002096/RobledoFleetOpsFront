@@ -1,43 +1,22 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
 
-type Unidad = 'pz' | 'lt' | 'kg' | 'm' | 'jgo';
-type MotivoSalida =
-  | 'DAÑO'
-  | 'MERMA'
-  | 'BAJA'
-  | 'PÉRDIDA'
-  | 'CONSUMO INTERNO'
-  | 'AJUSTE NEGATIVO';
+import {
+  ArticuloInventario,
+  ArticulosInventarioService
+} from '../../../../services/articulos-inventario.service';
 
-interface ArticuloInventario {
-  codigo: string;
-  nombre: string;
-  grupo: string;
-  unidad: Unidad;
-  existencia: number;
-}
-
-interface SalidaInventario {
-  folio: string;
-  fecha: string;
-  codigoArticulo: string;
-  articulo: string;
-  grupo: string;
-  unidad: Unidad;
-  cantidad: number;
-  costoUnitario: number;
-  costoTotal: number;
-  motivo: MotivoSalida;
-  referencia: string;
-  observaciones: string;
-  usuario: string;
-  responsable: string;
-}
+import {
+  CrearSalidaInventarioRequest,
+  MotivoSalida,
+  SalidaInventario,
+  SalidasInventarioService,
+  SalidasResumen
+} from '../../../../services/salidas-inventario.service';
 
 @Component({
   selector: 'app-salidas',
@@ -46,14 +25,11 @@ interface SalidaInventario {
   templateUrl: './salidas.html',
   styleUrl: './salidas.scss',
 })
-export class SalidasComponent {
-  articulos: ArticuloInventario[] = [
-    { codigo: 'G141', nombre: 'Disco de lija 6" X 6 G100', grupo: 'HERRAMIENTA', unidad: 'pz', existencia: 15 },
-    { codigo: 'H001', nombre: 'Pistola de Pintura', grupo: 'HERRAMIENTA', unidad: 'pz', existencia: 2 },
-    { codigo: 'L020', nombre: 'Aceite 15W-40', grupo: 'LUBRICANTE', unidad: 'lt', existencia: 18 },
-    { codigo: 'R310', nombre: 'Filtro de aire', grupo: 'REFACCIÓN', unidad: 'pz', existencia: 10 },
-    { codigo: 'S777', nombre: 'Sellador silicón', grupo: 'CONSUMIBLE', unidad: 'pz', existencia: 12 },
-  ];
+export class SalidasComponent implements OnInit {
+  private articulosService = inject(ArticulosInventarioService);
+  private salidasService = inject(SalidasInventarioService);
+
+  articulos: ArticuloInventario[] = [];
 
   motivosSalida: MotivoSalida[] = [
     'DAÑO',
@@ -64,66 +40,24 @@ export class SalidasComponent {
     'AJUSTE NEGATIVO',
   ];
 
-  salidas: SalidaInventario[] = [
-    {
-      folio: 'SAL-0001',
-      fecha: '2026-03-03',
-      codigoArticulo: 'R310',
-      articulo: 'Filtro de aire',
-      grupo: 'REFACCIÓN',
-      unidad: 'pz',
-      cantidad: 1,
-      costoUnitario: 420,
-      costoTotal: 420,
-      motivo: 'DAÑO',
-      referencia: 'INC-003',
-      observaciones: 'Filtro dañado durante revisión de almacén.',
-      usuario: 'Jorge Rangel',
-      responsable: 'Almacén',
-    },
-    {
-      folio: 'SAL-0002',
-      fecha: '2026-03-05',
-      codigoArticulo: 'L020',
-      articulo: 'Aceite 15W-40',
-      grupo: 'LUBRICANTE',
-      unidad: 'lt',
-      cantidad: 2,
-      costoUnitario: 98.5,
-      costoTotal: 197,
-      motivo: 'CONSUMO INTERNO',
-      referencia: 'INT-009',
-      observaciones: 'Consumo interno para pruebas operativas.',
-      usuario: 'Administrador',
-      responsable: 'Mantenimiento',
-    },
-    {
-      folio: 'SAL-0003',
-      fecha: '2026-03-06',
-      codigoArticulo: 'S777',
-      articulo: 'Sellador silicón',
-      grupo: 'CONSUMIBLE',
-      unidad: 'pz',
-      cantidad: 1,
-      costoUnitario: 55,
-      costoTotal: 55,
-      motivo: 'MERMA',
-      referencia: 'MER-001',
-      observaciones: 'Empaque abierto y no utilizable.',
-      usuario: 'Supervisor almacén',
-      responsable: 'Almacén',
-    },
-  ];
+  salidas: SalidaInventario[] = [];
+  salidasFiltradas: SalidaInventario[] = [];
+  salidasPaginadas: SalidaInventario[] = [];
+
+  resumen: SalidasResumen = {
+    totalSalidas: 0,
+    cantidadTotalSalida: 0,
+    costoTotalSalidas: 0,
+  };
 
   form = {
     fecha: this.hoyISO(),
-    codigoArticulo: '',
+    articuloInventarioId: null as number | null,
     cantidad: null as number | null,
     costoUnitario: null as number | null,
     motivo: 'DAÑO' as MotivoSalida,
     referencia: '',
     observaciones: '',
-    usuario: '',
     responsable: '',
   };
 
@@ -131,22 +65,25 @@ export class SalidasComponent {
   filtroMotivo = '';
 
   page = 1;
-  pageSize = 10;
+  pageSize = 5;
 
-  mostrarFormulario = true;
-
-  salidasFiltradas: SalidaInventario[] = [];
-  salidasPaginadas: SalidaInventario[] = [];
+  mostrarFormulario = false;
 
   mostrarModalDetalle = false;
   salidaSeleccionada: SalidaInventario | null = null;
 
-  constructor() {
-    this.aplicarFiltros();
+  loadingArticulos = false;
+  loadingSalidas = false;
+  saving = false;
+  errorMessage = '';
+
+  ngOnInit(): void {
+    this.cargarArticulos();
+    this.cargarSalidas();
   }
 
   get articuloSeleccionado(): ArticuloInventario | undefined {
-    return this.articulos.find(a => a.codigo === this.form.codigoArticulo);
+    return this.articulos.find(a => a.id === this.form.articuloInventarioId!);
   }
 
   get totalFormulario(): number {
@@ -156,15 +93,15 @@ export class SalidasComponent {
   }
 
   get totalSalidas(): number {
-    return this.salidasFiltradas.length;
+    return this.resumen.totalSalidas;
   }
 
   get cantidadTotalSalida(): number {
-    return this.salidasFiltradas.reduce((acc, item) => acc + item.cantidad, 0);
+    return this.resumen.cantidadTotalSalida;
   }
 
   get costoTotalSalidas(): number {
-    return this.salidasFiltradas.reduce((acc, item) => acc + item.costoTotal, 0);
+    return this.resumen.costoTotalSalidas;
   }
 
   get totalPages(): number {
@@ -192,10 +129,6 @@ export class SalidasComponent {
     return `${year}-${month}-${day}`;
   }
 
-  private toText(v: unknown): string {
-    return v === null || v === undefined ? '' : String(v).toLowerCase();
-  }
-
   toggleFormulario(): void {
     this.mostrarFormulario = !this.mostrarFormulario;
   }
@@ -204,10 +137,65 @@ export class SalidasComponent {
     const articulo = this.articuloSeleccionado;
     if (!articulo) return;
 
-    if (!this.form.costoUnitario || this.form.costoUnitario <= 0) {
-      const salidaRelacionada = this.salidas.find(s => s.codigoArticulo === articulo.codigo);
-      this.form.costoUnitario = salidaRelacionada?.costoUnitario ?? 0;
+    if (this.form.costoUnitario === null || this.form.costoUnitario <= 0) {
+      this.form.costoUnitario = Number(articulo.costoPromedio ?? 0);
     }
+  }
+
+  cargarArticulos(): void {
+    this.loadingArticulos = true;
+
+    this.articulosService.getArticulosActivos().subscribe({
+      next: (data) => {
+        this.articulos = data ?? [];
+        this.loadingArticulos = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar artículos:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudieron cargar los artículos.';
+        this.loadingArticulos = false;
+      }
+    });
+  }
+
+  cargarSalidas(): void {
+    this.loadingSalidas = true;
+    this.errorMessage = '';
+
+    this.salidasService.getSalidas(this.busqueda, this.filtroMotivo).subscribe({
+      next: (data) => {
+        this.salidas = data ?? [];
+        this.salidasFiltradas = [...this.salidas];
+        this.page = 1;
+        this.refrescarPaginado();
+        this.loadingSalidas = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar salidas:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudieron cargar las salidas.';
+        this.salidas = [];
+        this.salidasFiltradas = [];
+        this.salidasPaginadas = [];
+        this.loadingSalidas = false;
+      }
+    });
+
+    this.salidasService.getResumen(this.busqueda, this.filtroMotivo).subscribe({
+      next: (data) => {
+        this.resumen = data ?? {
+          totalSalidas: 0,
+          cantidadTotalSalida: 0,
+          costoTotalSalidas: 0,
+        };
+      },
+      error: (error) => {
+        console.error('Error al cargar resumen de salidas:', error);
+      }
+    });
+  }
+
+  aplicarFiltros(): void {
+    this.cargarSalidas();
   }
 
   guardarSalida(): void {
@@ -216,7 +204,7 @@ export class SalidasComponent {
       return;
     }
 
-    if (!this.form.codigoArticulo) {
+    if (!this.form.articuloInventarioId) {
       alert('Debes seleccionar un artículo.');
       return;
     }
@@ -231,93 +219,47 @@ export class SalidasComponent {
       return;
     }
 
-    const articulo = this.articuloSeleccionado;
-    if (!articulo) {
-      alert('No se encontró el artículo seleccionado.');
-      return;
-    }
-
-    if (Number(this.form.cantidad) > articulo.existencia) {
-      alert(`La cantidad excede la existencia actual del artículo (${articulo.existencia} ${articulo.unidad}).`);
-      return;
-    }
-
-    const nuevaSalida: SalidaInventario = {
-      folio: this.generarFolio(),
+    const payload: CrearSalidaInventarioRequest = {
       fecha: this.form.fecha,
-      codigoArticulo: articulo.codigo,
-      articulo: articulo.nombre,
-      grupo: articulo.grupo,
-      unidad: articulo.unidad,
-      cantidad: Number(this.form.cantidad),
-      costoUnitario: Number(this.form.costoUnitario),
-      costoTotal: Number(this.form.cantidad) * Number(this.form.costoUnitario),
+      articuloInventarioId: this.form.articuloInventarioId,
+      cantidad: this.form.cantidad,
+      costoUnitario: this.form.costoUnitario,
       motivo: this.form.motivo,
-      referencia: this.form.referencia.trim(),
-      observaciones: this.form.observaciones.trim(),
-      usuario: this.form.usuario.trim(),
-      responsable: this.form.responsable.trim(),
+      referencia: this.form.referencia?.trim() || null,
+      observaciones: this.form.observaciones?.trim() || null,
+      responsable: this.form.responsable?.trim() || null,
     };
 
-    articulo.existencia -= Number(this.form.cantidad);
+    this.saving = true;
 
-    this.salidas = [nuevaSalida, ...this.salidas];
-    this.limpiarFormulario(false);
-    this.aplicarFiltros();
-    this.mostrarFormulario = false;
-
-    alert(`Salida ${nuevaSalida.folio} registrada correctamente (mock).`);
+    this.salidasService.crearSalida(payload).subscribe({
+      next: (response) => {
+        alert(response?.mensaje || 'Salida registrada correctamente.');
+        this.resetForm();
+        this.saving = false;
+        this.cargarSalidas();
+        this.cargarArticulos();
+        this.mostrarFormulario = false;
+      },
+      error: (error) => {
+        console.error('Error al guardar salida:', error);
+        alert(error?.error?.mensaje || 'No se pudo registrar la salida.');
+        this.saving = false;
+      }
+    });
   }
 
-  limpiarFormulario(resetFecha: boolean = true): void {
+  resetForm(): void {
     this.form = {
-      fecha: resetFecha ? this.hoyISO() : this.form.fecha,
-      codigoArticulo: '',
+      fecha: this.hoyISO(),
+      articuloInventarioId: null,
       cantidad: null,
       costoUnitario: null,
       motivo: 'DAÑO',
       referencia: '',
       observaciones: '',
-      usuario: '',
       responsable: '',
     };
-  }
-
-  aplicarFiltros(): void {
-    const q = (this.busqueda || '').trim().toLowerCase();
-    const motivo = (this.filtroMotivo || '').trim().toLowerCase();
-
-    this.salidasFiltradas = this.salidas.filter(item => {
-      const matchMotivo = !motivo || this.toText(item.motivo) === motivo;
-
-      const matchQuery =
-        !q ||
-        [
-          item.folio,
-          item.fecha,
-          item.codigoArticulo,
-          item.articulo,
-          item.grupo,
-          item.unidad,
-          item.cantidad,
-          item.costoUnitario,
-          item.costoTotal,
-          item.motivo,
-          item.referencia,
-          item.observaciones,
-          item.usuario,
-          item.responsable,
-        ]
-          .map(v => this.toText(v))
-          .some(txt => txt.includes(q));
-
-      return matchMotivo && matchQuery;
-    });
-
-    this.page = Math.min(this.page, this.totalPages);
-    this.page = Math.max(1, this.page);
-
-    this.refrescarPaginado();
   }
 
   refrescarPaginado(): void {
@@ -343,8 +285,8 @@ export class SalidasComponent {
     this.refrescarPaginado();
   }
 
-  trackByFolio(_: number, item: SalidaInventario): string {
-    return item.folio;
+  trackBySalidaId(_: number, item: SalidaInventario): number {
+    return item.id;
   }
 
   onVerDetalle(item: SalidaInventario): void {
@@ -361,26 +303,20 @@ export class SalidasComponent {
     const ok = confirm(`¿Eliminar la salida ${item.folio} del artículo ${item.articulo}?`);
     if (!ok) return;
 
-    const articulo = this.articulos.find(a => a.codigo === item.codigoArticulo);
-    if (articulo) {
-      articulo.existencia += item.cantidad;
-    }
+    this.salidasService.eliminarSalida(item.id).subscribe({
+      next: (response) => {
+        if (this.salidaSeleccionada?.id === item.id) {
+          this.cerrarModalDetalle();
+        }
 
-    this.salidas = this.salidas.filter(x => x.folio !== item.folio);
-
-    if (this.salidaSeleccionada?.folio === item.folio) {
-      this.cerrarModalDetalle();
-    }
-
-    this.aplicarFiltros();
-  }
-
-  private generarFolio(): string {
-    const max = this.salidas.reduce((acc, item) => {
-      const n = Number(item.folio.replace('SAL-', ''));
-      return Number.isNaN(n) ? acc : Math.max(acc, n);
-    }, 0);
-
-    return `SAL-${String(max + 1).padStart(4, '0')}`;
+        alert(response?.mensaje || 'Salida eliminada correctamente.');
+        this.cargarSalidas();
+        this.cargarArticulos();
+      },
+      error: (error) => {
+        console.error('Error al eliminar salida:', error);
+        alert(error?.error?.mensaje || 'No se pudo eliminar la salida.');
+      }
+    });
   }
 }

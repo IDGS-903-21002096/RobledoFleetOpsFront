@@ -1,36 +1,27 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
 
-type Unidad = 'pz' | 'lt' | 'kg' | 'm' | 'jgo';
-type TipoEntrada = 'COMPRA' | 'DEVOLUCIÓN' | 'INVENTARIO INICIAL' | 'AJUSTE POSITIVO';
+import {
+  ArticuloInventario,
+  ArticulosInventarioService
+} from '../../../../services/articulos-inventario.service';
 
-interface ArticuloInventario {
-  codigo: string;
-  nombre: string;
-  grupo: string;
-  unidad: Unidad;
-}
+import {
+  CrearEntradaInventarioRequest,
+  EntradaInventario,
+  EntradasInventarioService,
+  EntradasResumen,
+  TipoEntrada
+} from '../../../../services/entradas-inventario.service';
 
-interface EntradaInventario {
-  folio: string;
-  fecha: string;
-  codigoArticulo: string;
-  articulo: string;
-  grupo: string;
-  unidad: Unidad;
-  cantidad: number;
-  costoUnitario: number;
-  costoTotal: number;
-  proveedor: string;
-  tipoEntrada: TipoEntrada;
-  referencia: string;
-  observaciones: string;
-  usuario: string;
-}
+import {
+  Proveedor,
+  ProveedoresService
+} from '../../../../services/proveedores.service';
 
 @Component({
   selector: 'app-entradas',
@@ -39,14 +30,13 @@ interface EntradaInventario {
   templateUrl: './entradas.html',
   styleUrl: './entradas.scss',
 })
-export class EntradasComponent {
-  articulos: ArticuloInventario[] = [
-    { codigo: 'G141', nombre: 'Disco de lija 6" X 6 G100', grupo: 'HERRAMIENTA', unidad: 'pz' },
-    { codigo: 'H001', nombre: 'Pistola de Pintura', grupo: 'HERRAMIENTA', unidad: 'pz' },
-    { codigo: 'L020', nombre: 'Aceite 15W-40', grupo: 'LUBRICANTE', unidad: 'lt' },
-    { codigo: 'R310', nombre: 'Filtro de aire', grupo: 'REFACCIÓN', unidad: 'pz' },
-    { codigo: 'S777', nombre: 'Sellador silicón', grupo: 'CONSUMIBLE', unidad: 'pz' },
-  ];
+export class EntradasComponent implements OnInit {
+  private articulosService = inject(ArticulosInventarioService);
+  private entradasService = inject(EntradasInventarioService);
+  private proveedoresService = inject(ProveedoresService);
+
+  articulos: ArticuloInventario[] = [];
+  proveedores: Proveedor[] = [];
 
   tiposEntrada: TipoEntrada[] = [
     'COMPRA',
@@ -55,89 +45,64 @@ export class EntradasComponent {
     'AJUSTE POSITIVO',
   ];
 
-  entradas: EntradaInventario[] = [
-    {
-      folio: 'ENT-0001',
-      fecha: '2026-03-02',
-      codigoArticulo: 'L020',
-      articulo: 'Aceite 15W-40',
-      grupo: 'LUBRICANTE',
-      unidad: 'lt',
-      cantidad: 20,
-      costoUnitario: 98.5,
-      costoTotal: 1970,
-      proveedor: 'Lubricantes del Bajío',
-      tipoEntrada: 'COMPRA',
-      referencia: 'FAC-1048',
-      observaciones: 'Compra para stock semanal.',
-      usuario: 'Jorge Rangel',
-    },
-    {
-      folio: 'ENT-0002',
-      fecha: '2026-03-04',
-      codigoArticulo: 'R310',
-      articulo: 'Filtro de aire',
-      grupo: 'REFACCIÓN',
-      unidad: 'pz',
-      cantidad: 10,
-      costoUnitario: 420,
-      costoTotal: 4200,
-      proveedor: 'Refacciones León',
-      tipoEntrada: 'COMPRA',
-      referencia: 'REM-8821',
-      observaciones: 'Ingreso por compra general.',
-      usuario: 'Administrador',
-    },
-    {
-      folio: 'ENT-0003',
-      fecha: '2026-03-06',
-      codigoArticulo: 'H001',
-      articulo: 'Pistola de Pintura',
-      grupo: 'HERRAMIENTA',
-      unidad: 'pz',
-      cantidad: 1,
-      costoUnitario: 1250,
-      costoTotal: 1250,
-      proveedor: 'Herramientas Industriales del Centro',
-      tipoEntrada: 'AJUSTE POSITIVO',
-      referencia: 'AJ-001',
-      observaciones: 'Regularización por conteo físico.',
-      usuario: 'Supervisor almacén',
-    },
-  ];
+  entradas: EntradaInventario[] = [];
+  entradasFiltradas: EntradaInventario[] = [];
+  entradasPaginadas: EntradaInventario[] = [];
+
+  resumen: EntradasResumen = {
+    totalEntradas: 0,
+    cantidadTotalIngresada: 0,
+    costoTotalEntradas: 0,
+  };
 
   form = {
     fecha: this.hoyISO(),
-    codigoArticulo: '',
+    articuloInventarioId: null as number | null,
     cantidad: null as number | null,
     costoUnitario: null as number | null,
-    proveedor: '',
+    proveedorId: null as number | null,
+    proveedorNombreManual: '',
     tipoEntrada: 'COMPRA' as TipoEntrada,
     referencia: '',
     observaciones: '',
-    usuario: '',
+  };
+
+  touched = {
+    fecha: false,
+    articuloInventarioId: false,
+    cantidad: false,
+    costoUnitario: false,
+    proveedor: false,
+    tipoEntrada: false,
+    referencia: false,
   };
 
   busqueda = '';
   filtroTipo = '';
 
   page = 1;
-  pageSize = 10;
+  pageSize = 5;
 
-  mostrarFormulario = true;
-
-  entradasFiltradas: EntradaInventario[] = [];
-  entradasPaginadas: EntradaInventario[] = [];
+  mostrarFormulario = false;
+  usarProveedorManual = false;
 
   mostrarModalDetalle = false;
   entradaSeleccionada: EntradaInventario | null = null;
 
-  constructor() {
-    this.aplicarFiltros();
+  loadingArticulos = false;
+  loadingProveedores = false;
+  loadingEntradas = false;
+  saving = false;
+  errorMessage = '';
+
+  ngOnInit(): void {
+    this.cargarArticulos();
+    this.cargarProveedores();
+    this.cargarEntradas();
   }
 
   get articuloSeleccionado(): ArticuloInventario | undefined {
-    return this.articulos.find(a => a.codigo === this.form.codigoArticulo);
+    return this.articulos.find(a => a.id === this.form.articuloInventarioId!);
   }
 
   get totalFormulario(): number {
@@ -147,15 +112,15 @@ export class EntradasComponent {
   }
 
   get totalEntradas(): number {
-    return this.entradasFiltradas.length;
+    return this.resumen.totalEntradas;
   }
 
   get cantidadTotalIngresada(): number {
-    return this.entradasFiltradas.reduce((acc, item) => acc + item.cantidad, 0);
+    return this.resumen.cantidadTotalIngresada;
   }
 
   get costoTotalEntradas(): number {
-    return this.entradasFiltradas.reduce((acc, item) => acc + item.costoTotal, 0);
+    return this.resumen.costoTotalEntradas;
   }
 
   get totalPages(): number {
@@ -183,119 +148,180 @@ export class EntradasComponent {
     return `${year}-${month}-${day}`;
   }
 
-  private toText(v: unknown): string {
-    return v === null || v === undefined ? '' : String(v).toLowerCase();
-  }
-
   toggleFormulario(): void {
     this.mostrarFormulario = !this.mostrarFormulario;
   }
 
   onArticuloChange(): void {
-    // Reservado para lógica futura
+    // Reservado por si luego quieres autocompletar costo sugerido o mostrar existencia
   }
 
-  guardarEntrada(): void {
-    if (!this.form.fecha) {
-      alert('Debes seleccionar la fecha de la entrada.');
-      return;
-    }
-
-    if (!this.form.codigoArticulo) {
-      alert('Debes seleccionar un artículo.');
-      return;
-    }
-
-    if (this.form.cantidad === null || this.form.cantidad <= 0) {
-      alert('Debes capturar una cantidad válida.');
-      return;
-    }
-
-    if (this.form.costoUnitario === null || this.form.costoUnitario < 0) {
-      alert('Debes capturar un costo unitario válido.');
-      return;
-    }
-
-    const articulo = this.articuloSeleccionado;
-    if (!articulo) {
-      alert('No se encontró el artículo seleccionado.');
-      return;
-    }
-
-    const nuevaEntrada: EntradaInventario = {
-      folio: this.generarFolio(),
-      fecha: this.form.fecha,
-      codigoArticulo: articulo.codigo,
-      articulo: articulo.nombre,
-      grupo: articulo.grupo,
-      unidad: articulo.unidad,
-      cantidad: Number(this.form.cantidad),
-      costoUnitario: Number(this.form.costoUnitario),
-      costoTotal: Number(this.form.cantidad) * Number(this.form.costoUnitario),
-      proveedor: this.form.proveedor.trim(),
-      tipoEntrada: this.form.tipoEntrada,
-      referencia: this.form.referencia.trim(),
-      observaciones: this.form.observaciones.trim(),
-      usuario: this.form.usuario.trim(),
-    };
-
-    this.entradas = [nuevaEntrada, ...this.entradas];
-    this.limpiarFormulario(false);
-    this.aplicarFiltros();
-    this.mostrarFormulario = false;
-
-    alert(`Entrada ${nuevaEntrada.folio} registrada correctamente (mock).`);
+  onProveedorModeChange(): void {
+    this.form.proveedorId = null;
+    this.form.proveedorNombreManual = '';
+    this.touched.proveedor = false;
   }
 
-  limpiarFormulario(resetFecha: boolean = true): void {
-    this.form = {
-      fecha: resetFecha ? this.hoyISO() : this.form.fecha,
-      codigoArticulo: '',
-      cantidad: null,
-      costoUnitario: null,
-      proveedor: '',
-      tipoEntrada: 'COMPRA',
-      referencia: '',
-      observaciones: '',
-      usuario: '',
-    };
+  cargarArticulos(): void {
+    this.loadingArticulos = true;
+
+    this.articulosService.getArticulosActivos().subscribe({
+      next: (data) => {
+        this.articulos = data ?? [];
+        this.loadingArticulos = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar artículos:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudieron cargar los artículos.';
+        this.loadingArticulos = false;
+      }
+    });
+  }
+
+  cargarProveedores(): void {
+    this.loadingProveedores = true;
+
+    this.proveedoresService.getProveedoresActivos().subscribe({
+      next: (data) => {
+        this.proveedores = data ?? [];
+        this.loadingProveedores = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar proveedores:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudieron cargar los proveedores.';
+        this.loadingProveedores = false;
+      }
+    });
+  }
+
+  cargarEntradas(): void {
+    this.loadingEntradas = true;
+    this.errorMessage = '';
+
+    this.entradasService.getEntradas(this.busqueda, this.filtroTipo).subscribe({
+      next: (data) => {
+        this.entradas = data ?? [];
+        this.entradasFiltradas = [...this.entradas];
+        this.page = 1;
+        this.refrescarPaginado();
+        this.loadingEntradas = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar entradas:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudieron cargar las entradas.';
+        this.entradas = [];
+        this.entradasFiltradas = [];
+        this.entradasPaginadas = [];
+        this.loadingEntradas = false;
+      }
+    });
+
+    this.entradasService.getResumen(this.busqueda, this.filtroTipo).subscribe({
+      next: (data) => {
+        this.resumen = data ?? {
+          totalEntradas: 0,
+          cantidadTotalIngresada: 0,
+          costoTotalEntradas: 0,
+        };
+      },
+      error: (error) => {
+        console.error('Error al cargar resumen:', error);
+      }
+    });
   }
 
   aplicarFiltros(): void {
-    const q = (this.busqueda || '').trim().toLowerCase();
-    const tipo = (this.filtroTipo || '').trim().toLowerCase();
+    this.cargarEntradas();
+  }
 
-    this.entradasFiltradas = this.entradas.filter(item => {
-      const matchTipo = !tipo || this.toText(item.tipoEntrada) === tipo;
+  private formularioValido(): boolean {
+    this.touched.fecha = true;
+    this.touched.articuloInventarioId = true;
+    this.touched.cantidad = true;
+    this.touched.costoUnitario = true;
+    this.touched.proveedor = true;
+    this.touched.tipoEntrada = true;
+    this.touched.referencia = true;
 
-      const matchQuery =
-        !q ||
-        [
-          item.folio,
-          item.fecha,
-          item.codigoArticulo,
-          item.articulo,
-          item.grupo,
-          item.unidad,
-          item.cantidad,
-          item.costoUnitario,
-          item.costoTotal,
-          item.proveedor,
-          item.tipoEntrada,
-          item.referencia,
-          item.observaciones,
-          item.usuario,
-        ]
-          .map(v => this.toText(v))
-          .some(txt => txt.includes(q));
+    if (!this.form.fecha) return false;
+    if (!this.form.articuloInventarioId) return false;
+    if (this.form.cantidad === null || this.form.cantidad <= 0) return false;
+    if (this.form.costoUnitario === null || this.form.costoUnitario <= 0) return false;
+    if (!this.form.tipoEntrada?.trim()) return false;
+    if (!this.form.referencia?.trim()) return false;
 
-      return matchTipo && matchQuery;
+    if (this.usarProveedorManual) {
+      return !!this.form.proveedorNombreManual.trim();
+    }
+
+    return this.form.proveedorId !== null;
+  }
+
+  guardarEntrada(): void {
+    this.errorMessage = '';
+
+    if (!this.formularioValido()) {
+      this.errorMessage = 'Revisa los campos obligatorios del formulario.';
+      return;
+    }
+
+    const payload: CrearEntradaInventarioRequest = {
+      fecha: this.form.fecha,
+      articuloInventarioId: this.form.articuloInventarioId as number,
+      cantidad: this.form.cantidad as number,
+      costoUnitario: this.form.costoUnitario as number,
+      proveedorId: this.usarProveedorManual ? null : this.form.proveedorId,
+      proveedorNombreManual: this.usarProveedorManual
+        ? this.form.proveedorNombreManual.trim()
+        : null,
+      tipoEntrada: this.form.tipoEntrada,
+      referencia: this.form.referencia?.trim() || null,
+      observaciones: this.form.observaciones?.trim() || null,
+    };
+
+    this.saving = true;
+
+    this.entradasService.crearEntrada(payload).subscribe({
+      next: (response) => {
+        alert(response?.mensaje || 'Entrada registrada correctamente.');
+        this.resetForm();
+        this.saving = false;
+        this.cargarEntradas();
+        this.cargarArticulos();
+        this.mostrarFormulario = false;
+      },
+      error: (error) => {
+        console.error('Error al guardar entrada:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudo registrar la entrada.';
+        this.saving = false;
+      }
     });
+  }
 
-    this.page = Math.min(this.page, this.totalPages);
-    this.page = Math.max(1, this.page);
+  resetForm(): void {
+    this.form = {
+      fecha: this.hoyISO(),
+      articuloInventarioId: null,
+      cantidad: null,
+      costoUnitario: null,
+      proveedorId: null,
+      proveedorNombreManual: '',
+      tipoEntrada: 'COMPRA',
+      referencia: '',
+      observaciones: '',
+    };
 
-    this.refrescarPaginado();
+    this.usarProveedorManual = false;
+
+    this.touched = {
+      fecha: false,
+      articuloInventarioId: false,
+      cantidad: false,
+      costoUnitario: false,
+      proveedor: false,
+      tipoEntrada: false,
+      referencia: false,
+    };
   }
 
   refrescarPaginado(): void {
@@ -321,8 +347,8 @@ export class EntradasComponent {
     this.refrescarPaginado();
   }
 
-  trackByFolio(_: number, item: EntradaInventario): string {
-    return item.folio;
+  trackByEntradaId(_: number, item: EntradaInventario): number {
+    return item.id;
   }
 
   onVerDetalle(item: EntradaInventario): void {
@@ -339,21 +365,20 @@ export class EntradasComponent {
     const ok = confirm(`¿Eliminar la entrada ${item.folio} del artículo ${item.articulo}?`);
     if (!ok) return;
 
-    this.entradas = this.entradas.filter(x => x.folio !== item.folio);
+    this.entradasService.eliminarEntrada(item.id).subscribe({
+      next: (response) => {
+        if (this.entradaSeleccionada?.id === item.id) {
+          this.cerrarModalDetalle();
+        }
 
-    if (this.entradaSeleccionada?.folio === item.folio) {
-      this.cerrarModalDetalle();
-    }
-
-    this.aplicarFiltros();
-  }
-
-  private generarFolio(): string {
-    const max = this.entradas.reduce((acc, item) => {
-      const n = Number(item.folio.replace('ENT-', ''));
-      return Number.isNaN(n) ? acc : Math.max(acc, n);
-    }, 0);
-
-    return `ENT-${String(max + 1).padStart(4, '0')}`;
+        alert(response?.mensaje || 'Entrada eliminada correctamente.');
+        this.cargarEntradas();
+        this.cargarArticulos();
+      },
+      error: (error) => {
+        console.error('Error al eliminar entrada:', error);
+        alert(error?.error?.mensaje || 'No se pudo eliminar la entrada.');
+      }
+    });
   }
 }

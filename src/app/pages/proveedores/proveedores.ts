@@ -1,27 +1,24 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../components/cabecera/cabecera';
 import { FooterComponent } from '../../components/footer/footer';
+import { Proveedor, ProveedoresService } from '../../../services/proveedores.service';
 
 type TipoProveedor = 'Refacciones' | 'Servicios' | 'Ambos';
 
 type ProveedorCard = {
   id: number;
-  nombre: string; // Nombre comercial
+  nombre: string;
   telefono: string;
-  email?: string; // opcional
+  email?: string;
   estatus: 'ACTIVO' | 'INACTIVO';
-
-  // Opcionales (por cambios del registro)
   tipo?: TipoProveedor;
   contacto?: string;
   telefonoContacto?: string;
   correoContacto?: string;
-
-  // Dirección (opcional) - usado por buildDireccion() en el modal
   calle?: string;
   numero?: string;
   colonia?: string;
@@ -30,75 +27,101 @@ type ProveedorCard = {
   cp?: string;
 };
 
+type EstadoFiltro = 'ACTIVOS' | 'INACTIVOS';
+
 @Component({
   selector: 'app-proveedores',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, CabeceraComponent, FooterComponent],
   templateUrl: './proveedores.html',
 })
-export class ProveedoresComponent {
-  search = '';
-  pageSize = 12;
+export class ProveedoresComponent implements OnInit {
+  private router = inject(Router);
+  private proveedoresService = inject(ProveedoresService);
 
-  // Modal detalle
+  search = '';
+  page = 1;
+  pageSize = 5;
+
+  loading = false;
+  errorMessage = '';
+
+  estadoFiltro: EstadoFiltro = 'ACTIVOS';
+
   isDetalleOpen = false;
   selectedProveedor: ProveedorCard | null = null;
 
-  // Mock data (luego lo conectamos a la API)
-  proveedores: ProveedorCard[] = [
-    {
-      id: 1,
-      nombre: 'Refacciones del Bajío',
-      telefono: '477 123 4567',
-      email: 'ventas@refaccionesbajio.com',
-      estatus: 'ACTIVO',
-      tipo: 'Refacciones',
-      contacto: 'Laura Martínez',
-      telefonoContacto: '477 555 1122',
-      correoContacto: 'contacto@refaccionesbajio.com',
-      calle: 'Blvd. Principal',
-      numero: '123',
-      colonia: 'Centro',
-      ciudad: 'León',
-      estado: 'Guanajuato',
-      cp: '37000',
-    },
-    {
-      id: 2,
-      nombre: 'Servicios Mecánicos León',
-      telefono: '477 765 4321',
-      email: '', // opcional
-      estatus: 'INACTIVO',
-      tipo: 'Servicios',
-      contacto: 'Carlos Pérez',
-      telefonoContacto: '477 222 3344',
-      correoContacto: 'carlos@servmecanicosleon.com',
-      ciudad: 'León',
-      estado: 'Guanajuato',
-    },
-    {
-      id: 3,
-      nombre: 'Aceites y Lubricantes del Centro',
-      telefono: '477 111 2233',
-      email: 'contacto@lubricantescentro.com',
-      estatus: 'ACTIVO',
-      tipo: 'Ambos',
-      contacto: 'María López',
-      telefonoContacto: '477 777 8899',
-      correoContacto: 'maria@lubricantescentro.com',
-      colonia: 'San Juan',
-      ciudad: 'León',
-      estado: 'Guanajuato',
-      cp: '37100',
-    },
-  ];
+  proveedores: ProveedorCard[] = [];
 
-  constructor(private router: Router) {}
+  ngOnInit(): void {
+    this.cargarProveedores();
+  }
+
+  cargarProveedores(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    const request$ =
+      this.estadoFiltro === 'ACTIVOS'
+        ? this.proveedoresService.getProveedoresActivos()
+        : this.proveedoresService.getProveedoresInactivos();
+
+    request$.subscribe({
+      next: (data) => {
+        this.proveedores = (data ?? []).map((p) => this.mapProveedorToCard(p));
+        this.page = 1;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar proveedores:', error);
+        this.errorMessage = this.getLoadErrorMessage(error, 'los proveedores');
+        this.loading = false;
+      }
+    });
+  }
+
+  private getLoadErrorMessage(error: any, recurso: string): string {
+    const status = error?.status;
+
+    if (status === 403) {
+      return `Tu rol no tiene acceso a ${recurso}.`;
+    }
+
+    if (status === 401) {
+      return 'Tu sesión no es válida o ha expirado. Inicia sesión nuevamente.';
+    }
+
+    if (status === 0) {
+      return 'No fue posible conectar con el servidor.';
+    }
+
+    return `No se pudo cargar ${recurso}.`;
+  }
+
+  private mapProveedorToCard(p: Proveedor): ProveedorCard {
+    return {
+      id: p.id,
+      nombre: p.nombreComercial,
+      telefono: p.telefono,
+      email: p.email ?? '',
+      estatus: p.activo ? 'ACTIVO' : 'INACTIVO',
+      tipo: (p.tipo as TipoProveedor) ?? undefined,
+      contacto: p.contacto ?? '',
+      telefonoContacto: p.telefonoContacto ?? '',
+      correoContacto: p.correoContacto ?? '',
+      calle: p.calle ?? '',
+      numero: p.numero ?? '',
+      colonia: p.colonia ?? '',
+      ciudad: p.ciudad ?? '',
+      estado: p.estado ?? '',
+      cp: p.cp ?? '',
+    };
+  }
 
   filteredProveedores(): ProveedorCard[] {
     const q = this.search.trim().toLowerCase();
 
-    const list = !q
+    return !q
       ? this.proveedores
       : this.proveedores.filter((p) => {
           const blob = [
@@ -110,7 +133,6 @@ export class ProveedoresComponent {
             p.contacto ?? '',
             p.telefonoContacto ?? '',
             p.correoContacto ?? '',
-            // dirección también ayuda al buscador (opcional)
             p.calle ?? '',
             p.numero ?? '',
             p.colonia ?? '',
@@ -123,11 +145,48 @@ export class ProveedoresComponent {
 
           return blob.includes(q);
         });
-
-    return list.slice(0, this.pageSize);
   }
 
-  // ===== Modal detalle =====
+  paginatedProveedores(): ProveedorCard[] {
+    const start = (this.page - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    return this.filteredProveedores().slice(start, end);
+  }
+
+  get totalPages(): number {
+    const total = this.filteredProveedores().length;
+    return Math.max(1, Math.ceil(total / this.pageSize));
+  }
+
+  get inicioRango(): number {
+    const total = this.filteredProveedores().length;
+    if (total === 0) return 0;
+    return (this.page - 1) * this.pageSize + 1;
+  }
+
+  get finRango(): number {
+    const total = this.filteredProveedores().length;
+    if (total === 0) return 0;
+    return Math.min(this.page * this.pageSize, total);
+  }
+
+  onSearchChange(): void {
+    this.page = 1;
+  }
+
+  cambiarPageSize(): void {
+    this.page = 1;
+  }
+
+  prevPage(): void {
+    if (this.page <= 1) return;
+    this.page -= 1;
+  }
+
+  nextPage(): void {
+    if (this.page >= this.totalPages) return;
+    this.page += 1;
+  }
 
   openDetalle(p: ProveedorCard): void {
     this.selectedProveedor = p;
@@ -156,8 +215,6 @@ export class ProveedoresComponent {
     return parts.length ? parts.join(', ') : '—';
   }
 
-  // ===== Acciones =====
-
   onAgregarProveedor(): void {
     this.router.navigate(['/proveedores/nuevo']);
   }
@@ -166,7 +223,44 @@ export class ProveedoresComponent {
     this.router.navigate(['/proveedores', p.id, 'editar']);
   }
 
+  onCambiarFiltro(estado: EstadoFiltro): void {
+    if (this.estadoFiltro === estado) return;
+
+    this.estadoFiltro = estado;
+    this.page = 1;
+    this.closeDetalle();
+    this.cargarProveedores();
+  }
+
   onEliminar(p: ProveedorCard): void {
-    console.log('Eliminar', p);
+    const confirmar = confirm(`¿Deseas inactivar al proveedor "${p.nombre}"?`);
+    if (!confirmar) return;
+
+    this.proveedoresService.inactivarProveedor(p.id).subscribe({
+      next: () => {
+        this.closeDetalle();
+        this.cargarProveedores();
+      },
+      error: (error) => {
+        console.error('Error al inactivar proveedor:', error);
+        alert(error?.error?.mensaje || 'No se pudo inactivar el proveedor.');
+      }
+    });
+  }
+
+  onReactivar(p: ProveedorCard): void {
+    const confirmar = confirm(`¿Deseas reactivar al proveedor "${p.nombre}"?`);
+    if (!confirmar) return;
+
+    this.proveedoresService.reactivarProveedor(p.id).subscribe({
+      next: () => {
+        this.closeDetalle();
+        this.cargarProveedores();
+      },
+      error: (error) => {
+        console.error('Error al reactivar proveedor:', error);
+        alert(error?.error?.mensaje || 'No se pudo reactivar el proveedor.');
+      }
+    });
   }
 }

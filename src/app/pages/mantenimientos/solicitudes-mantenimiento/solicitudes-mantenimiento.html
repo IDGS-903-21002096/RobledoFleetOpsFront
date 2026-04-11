@@ -39,7 +39,20 @@
       </div>
     </div>
 
-    <!-- KPIs -->
+    <div
+      *ngIf="errorMessage"
+      class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+    >
+      {{ errorMessage }}
+    </div>
+
+    <div
+      *ngIf="successMessage"
+      class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700"
+    >
+      {{ successMessage }}
+    </div>
+
     <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
       <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
         <p class="text-sm text-slate-500">Total solicitudes</p>
@@ -125,41 +138,47 @@
         <table class="w-full text-left text-sm text-gray-700">
           <thead class="bg-gray-50 text-xs uppercase text-gray-600">
             <tr>
-              <th class="px-6 py-4">Folio</th>
-              <th class="px-6 py-4">Fecha</th>
-              <th class="px-6 py-4">Unidad</th>
-              <th class="px-6 py-4">Tipo</th>
-              <th class="px-6 py-4">Prioridad</th>
-              <th class="px-6 py-4">Solicitó</th>
-              <th class="px-6 py-4">Estado</th>
-              <th class="px-6 py-4">Observaciones</th>
-              <th class="px-6 py-4 text-right">Acciones</th>
+              <th class="px-5 py-3">Folio</th>
+              <th class="px-5 py-3">Fecha</th>
+              <th class="px-5 py-3">Unidad</th>
+              <th class="px-5 py-3">Tipo</th>
+              <th class="px-5 py-3">Prioridad</th>
+              <th class="px-5 py-3">Solicitó</th>
+              <th class="px-5 py-3">Estado</th>
+              <th class="px-5 py-3">Observaciones</th>
+              <th class="px-5 py-3 text-right">Acciones</th>
             </tr>
           </thead>
 
           <tbody>
+            <tr *ngIf="loading">
+              <td colspan="9" class="px-5 py-8 text-center text-sm text-slate-500">
+                Cargando solicitudes...
+              </td>
+            </tr>
+
             <tr
-              *ngFor="let s of solicitudesFiltradas"
+              *ngFor="let s of solicitudesPaginadas"
               class="border-t border-gray-100 align-top hover:bg-slate-50/70"
             >
-              <td class="px-6 py-4 font-semibold text-slate-900">
+              <td class="px-5 py-2.5 font-semibold text-slate-900">
                 {{ s.folio }}
               </td>
 
-              <td class="px-6 py-4 whitespace-nowrap">
+              <td class="px-5 py-2.5 whitespace-nowrap text-sm leading-5">
                 {{ s.fechaSolicitud }}
               </td>
 
-              <td class="px-6 py-4">
-                <div class="font-medium text-slate-900">{{ s.unidadNombre }}</div>
-                <div class="text-xs text-slate-500" *ngIf="s.placa">{{ s.placa }}</div>
+              <td class="px-5 py-2.5">
+                <div class="font-medium leading-5 text-slate-900">{{ s.unidadNombre }}</div>
+                <div class="text-xs leading-4 text-slate-500" *ngIf="s.placa">{{ s.placa }}</div>
               </td>
 
-              <td class="px-6 py-4">
+              <td class="px-5 py-2.5 text-sm leading-5">
                 {{ s.tipoServicio }}
               </td>
 
-              <td class="px-6 py-4">
+              <td class="px-5 py-2.5">
                 <span
                   class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
                   [ngClass]="getPrioridadClass(s.prioridad)"
@@ -168,33 +187,48 @@
                 </span>
               </td>
 
-              <td class="px-6 py-4">
-                {{ s.solicitadoPor }}
+              <td class="px-5 py-2.5">
+                <div class="max-w-[135px] break-words text-sm leading-5 text-slate-700">
+                  {{ s.solicitadoPor }}
+                </div>
               </td>
 
-              <td class="px-6 py-4">
+              <td class="px-5 py-2.5">
                 <span
-                  class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                  class="inline-flex rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap"
                   [ngClass]="getEstadoClass(s.estado)"
                 >
                   {{ s.estado }}
                 </span>
               </td>
 
-              <td class="px-6 py-4">
-                <div class="max-w-[280px] whitespace-normal text-sm text-slate-600">
-                  {{ s.observaciones || 'Sin observaciones' }}
+              <td class="px-5 py-2.5">
+                <div
+                  class="max-w-[220px] text-sm leading-5 text-slate-600"
+                  [title]="s.observaciones || 'Sin observaciones'"
+                >
+                  {{ getObservacionesResumen(s.observaciones, 70) }}
                 </div>
-                <div class="mt-1 text-xs text-slate-400" *ngIf="s.kilometraje !== null">
+
+                <button
+                  *ngIf="debeMostrarVerMas(s.observaciones, 70)"
+                  type="button"
+                  class="mt-0.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                  (click)="onVerDetalle(s)"
+                >
+                  Ver completo
+                </button>
+
+                <div class="mt-1 text-xs leading-4 text-slate-400" *ngIf="s.kilometraje !== null">
                   Kilometraje: {{ s.kilometraje | number:'1.0-0' }}
                 </div>
               </td>
 
-              <td class="px-6 py-4">
-                <div class="flex flex-wrap justify-end gap-2">
+              <td class="px-5 py-2.5">
+                <div class="flex flex-wrap justify-end gap-1.5 max-w-[190px] ml-auto">
                   <button
                     type="button"
-                    class="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                    class="rounded-full border border-slate-300 px-3.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
                     (click)="onVerDetalle(s)"
                   >
                     Ver
@@ -203,7 +237,7 @@
                   <button
                     *ngIf="s.estado === 'Pendiente'"
                     type="button"
-                    class="rounded-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
+                    class="rounded-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
                     (click)="onAprobar(s)"
                   >
                     Aprobar
@@ -212,7 +246,7 @@
                   <button
                     *ngIf="s.estado === 'Pendiente' || s.estado === 'Aprobada'"
                     type="button"
-                    class="rounded-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
+                    class="rounded-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
                     (click)="onContinuarRegistro(s)"
                   >
                     Continuar registro
@@ -221,16 +255,16 @@
                   <button
                     *ngIf="s.estado === 'Pendiente'"
                     type="button"
-                    class="rounded-full bg-gradient-to-r from-rose-500 via-rose-600 to-rose-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
+                    class="rounded-full bg-gradient-to-r from-rose-500 via-rose-600 to-rose-700 px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
                     (click)="onRechazar(s)"
                   >
                     Rechazar
                   </button>
 
                   <button
-                    *ngIf="s.estado !== 'Finalizada' && s.estado !== 'Cancelada' && s.estado !== 'Rechazada'"
+                    *ngIf="s.estado !== 'Cancelada' && s.estado !== 'Rechazada'"
                     type="button"
-                    class="rounded-full bg-gradient-to-r from-slate-500 via-slate-600 to-slate-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
+                    class="rounded-full bg-gradient-to-r from-slate-500 via-slate-600 to-slate-700 px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-gradient-to-br"
                     (click)="onCancelarSolicitud(s)"
                   >
                     Cancelar
@@ -239,8 +273,8 @@
               </td>
             </tr>
 
-            <tr *ngIf="solicitudesFiltradas.length === 0">
-              <td colspan="9" class="px-6 py-10 text-center text-sm text-slate-500">
+            <tr *ngIf="!loading && solicitudesFiltradas.length === 0">
+              <td colspan="9" class="px-5 py-8 text-center text-sm text-slate-500">
                 No se encontraron solicitudes con los filtros seleccionados.
               </td>
             </tr>
@@ -249,8 +283,50 @@
       </div>
 
       <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-xs text-gray-600">
-        <span>Robledo FleetOps</span>
+        <span>
+          Mostrando:
+          <span class="font-semibold">{{ inicioRango }}</span> -
+          <span class="font-semibold">{{ finRango }}</span>
+          de <span class="font-semibold">{{ solicitudesFiltradas.length }}</span>
+        </span>
         <span class="text-gray-400">Mantenimientos / Solicitudes</span>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="text-xs text-gray-600">
+        Página <span class="font-semibold">{{ page }}</span> / {{ totalPages }}
+      </div>
+
+      <div class="flex items-center gap-2">
+        <select
+          class="rounded-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          [(ngModel)]="pageSize"
+          (ngModelChange)="cambiarPageSize()"
+        >
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+        </select>
+
+        <button
+          type="button"
+          class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          (click)="prevPage()"
+          [disabled]="page === 1"
+        >
+          Anterior
+        </button>
+
+        <button
+          type="button"
+          class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          (click)="nextPage()"
+          [disabled]="page >= totalPages"
+        >
+          Siguiente
+        </button>
       </div>
     </div>
   </div>

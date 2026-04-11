@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 
+import { authGuard } from './guards/auth.guard';
+
 import { LoginComponent } from './pages/login/login';
 import { InicioComponent } from './pages/inicio/inicio';
 
@@ -16,7 +18,7 @@ import { SolicitudesMantenimientoComponent } from './pages/mantenimientos/solici
 import { RegistroSolicitudMantenimientoComponent } from './pages/mantenimientos/registro-solicitud-mantenimiento/registro-solicitud-mantenimiento';
 
 import { RegistroUsuarioComponent } from './pages/usuarios/registro-usuario/registro-usuario';
-import { RegistroVehiculo } from './pages/vehiculos/registro-vehiculo/registro-vehiculo';
+import { RegistroVehiculoComponent } from './pages/vehiculos/registro-vehiculo/registro-vehiculo';
 import { RegistroProveedorComponent } from './pages/proveedores/registro-proveedor/registro-proveedor';
 import { RegistroArticuloComponent } from './pages/inventario/registro-articulo/registro-articulo';
 import { EntradasComponent } from './pages/inventario/entradas/entradas';
@@ -33,45 +35,54 @@ import { RecordatoriosComponent } from './pages/mantenimientos/recordatorios/rec
 
 export const routes: Routes = [
 
+  // 🔓 LOGIN (SIN PROTECCIÓN)
   { path: '', component: LoginComponent },
 
-  { path: 'inicio', component: InicioComponent },
+  // 🔒 INICIO
+  { path: 'inicio', component: InicioComponent, canActivate: [authGuard] },
 
-  { path: 'vehiculos', component: VehiculosComponent },
-  { path: 'vehiculos/nuevo', component: RegistroVehiculo },
-  { path: 'vehiculos/:id/editar', component: RegistroVehiculo },
-  { path: 'vehiculos/tipos', component: TiposComponent },
-  { path: 'vehiculos/tipos/nuevo', component: RegistroTipoComponent },
-  { path: 'vehiculos/tipos/:id/editar', component: RegistroTipoComponent },
-  { path: 'vehiculos/:id/documentos', component: VehiculoDocumentosComponent },
-  { path: 'vehiculos/:id', component: VehiculoDetalleComponent },
+  // 🔒 VEHÍCULOS
+  { path: 'vehiculos', component: VehiculosComponent, canActivate: [authGuard] },
+  { path: 'vehiculos/nuevo', component: RegistroVehiculoComponent, canActivate: [authGuard] },
+  { path: 'vehiculos/:id/editar', component: RegistroVehiculoComponent, canActivate: [authGuard] },
+  { path: 'vehiculos/tipos', component: TiposComponent, canActivate: [authGuard] },
+  { path: 'vehiculos/tipos/nuevo', component: RegistroTipoComponent, canActivate: [authGuard] },
+  { path: 'vehiculos/tipos/:id/editar', component: RegistroTipoComponent, canActivate: [authGuard] },
+  { path: 'vehiculos/:id/documentos', component: VehiculoDocumentosComponent, canActivate: [authGuard] },
+  { path: 'vehiculos/:id', component: VehiculoDetalleComponent, canActivate: [authGuard] },
 
-  { path: 'inventario', component: InventarioComponent },
-  { path: 'inventario/nuevo', component: RegistroArticuloComponent },
-  { path: 'inventario/:id/editar', component: RegistroArticuloComponent },
-  { path: 'inventario/grupos', component: GruposComponent },
-  { path: 'inventario/grupos/nuevo', component: RegistroGrupoComponent },
-  { path: 'inventario/grupos/:id/editar', component: RegistroGrupoComponent },
-  { path: 'inventario/entradas', component: EntradasComponent },
-  { path: 'inventario/salidas', component: SalidasComponent },
-  { path: 'inventario/historial-movimientos', component: HistorialMovimientosComponent },
+  // 🔒 INVENTARIO
+  { path: 'inventario', component: InventarioComponent, canActivate: [authGuard] },
+  { path: 'inventario/nuevo', component: RegistroArticuloComponent, canActivate: [authGuard] },
+  { path: 'inventario/:id/editar', component: RegistroArticuloComponent, canActivate: [authGuard] },
+  { path: 'inventario/grupos', component: GruposComponent, canActivate: [authGuard] },
+  { path: 'inventario/grupos/nuevo', component: RegistroGrupoComponent, canActivate: [authGuard] },
+  { path: 'inventario/grupos/:id/editar', component: RegistroGrupoComponent, canActivate: [authGuard] },
+  { path: 'inventario/entradas', component: EntradasComponent, canActivate: [authGuard] },
+  { path: 'inventario/salidas', component: SalidasComponent, canActivate: [authGuard] },
+  { path: 'inventario/historial-movimientos', component: HistorialMovimientosComponent, canActivate: [authGuard] },
 
-  { path: 'mantenimientos', component: MantenimientosComponent },
-  { path: 'mantenimientos/registro', component: RegistroMantenimientoComponent },
-  { path: 'mantenimientos/recordatorios', component: RecordatoriosComponent },
-  { path: 'mantenimientos/solicitudes', component: SolicitudesMantenimientoComponent },
-  { path: 'mantenimientos/solicitudes/nueva', component: RegistroSolicitudMantenimientoComponent },
+  // 🔒 MANTENIMIENTOS
+  { path: 'mantenimientos', component: MantenimientosComponent, canActivate: [authGuard] },
+  { path: 'mantenimientos/registro', component: RegistroMantenimientoComponent, canActivate: [authGuard] },
+  { path: 'mantenimientos/registro/:id/editar', component: RegistroMantenimientoComponent, canActivate: [authGuard] },
+  { path: 'mantenimientos/recordatorios', component: RecordatoriosComponent, canActivate: [authGuard] },
+  { path: 'mantenimientos/solicitudes', component: SolicitudesMantenimientoComponent, canActivate: [authGuard] },
+  { path: 'mantenimientos/solicitudes/nueva', component: RegistroSolicitudMantenimientoComponent, canActivate: [authGuard] },
 
-  { path: 'usuarios', component: UsuariosComponent },
-  { path: 'usuarios/nuevo', component: RegistroUsuarioComponent },
-  { path: 'usuarios/roles', component: RolesComponent },
-  { path: 'usuarios/roles/nuevo', component: RegistroRolComponent },
-  { path: 'usuarios/roles/:id/editar', component: RegistroRolComponent },
-  { path: 'usuarios/:id/editar', component: RegistroUsuarioComponent },
+  // 🔒 USUARIOS
+  { path: 'usuarios', component: UsuariosComponent, canActivate: [authGuard] },
+  { path: 'usuarios/nuevo', component: RegistroUsuarioComponent, canActivate: [authGuard] },
+  { path: 'usuarios/roles', component: RolesComponent, canActivate: [authGuard] },
+  { path: 'usuarios/roles/nuevo', component: RegistroRolComponent, canActivate: [authGuard] },
+  { path: 'usuarios/roles/:id/editar', component: RegistroRolComponent, canActivate: [authGuard] },
+  { path: 'usuarios/:id/editar', component: RegistroUsuarioComponent, canActivate: [authGuard] },
 
-  { path: 'proveedores', component: ProveedoresComponent },
-  { path: 'proveedores/nuevo', component: RegistroProveedorComponent },
-  { path: 'proveedores/:id/editar', component: RegistroProveedorComponent },
+  // 🔒 PROVEEDORES
+  { path: 'proveedores', component: ProveedoresComponent, canActivate: [authGuard] },
+  { path: 'proveedores/nuevo', component: RegistroProveedorComponent, canActivate: [authGuard] },
+  { path: 'proveedores/:id/editar', component: RegistroProveedorComponent, canActivate: [authGuard] },
 
+  // 🔁 REDIRECCIÓN
   { path: '**', redirectTo: '', pathMatch: 'full' },
 ];

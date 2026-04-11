@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -6,21 +6,26 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
 
+import { Vehiculo, VehiculosService } from '../../../../services/vehiculos.service';
+import {
+  ArticuloInventario,
+  ArticulosInventarioService
+} from '../../../../services/articulos-inventario.service';
+import {
+  SolicitudMantenimiento,
+  SolicitudesMantenimientoService
+} from '../../../../services/solicitudes-mantenimiento.service';
+import {
+  CrearMantenimientoRequest,
+  DetalleMantenimientoRequest,
+  MantenimientosService
+} from '../../../../services/mantenimientos.service';
+
 type TipoServicio = 'Preventivo' | 'Correctivo';
-type EstatusMantenimiento = 'Programado' | 'En proceso' | 'Terminado' | 'Cancelado';
+type EstatusMantenimiento = 'Programado' | 'En proceso' | 'Finalizado' | 'Cancelado';
 type ServicioNivel = 'Servicio menor' | 'Servicio mayor';
 type ModoRegistroMantenimiento = 'directo' | 'solicitud';
 type OrigenMantenimiento = 'DIRECTO' | 'SOLICITUD';
-
-type ChecklistKey =
-  | 'RevisionNiveles'
-  | 'LimpiezaAjusteFrenos'
-  | 'Engrasado'
-  | 'RevisionLuces'
-  | 'RevisionSuspension'
-  | 'RevisionCarroceria'
-  | 'RevisionSistemaElectrico'
-  | 'Otro';
 
 type MaterialCatalogo = {
   id: number;
@@ -37,16 +42,6 @@ type MaterialLinea = {
   precioUnitario: number;
 };
 
-type SolicitudMock = {
-  id: number;
-  folio: string;
-  unidadId: number;
-  tipoServicio: TipoServicio;
-  prioridad: 'Baja' | 'Media' | 'Alta' | 'Crítica';
-  kilometraje: number | null;
-  observaciones: string;
-};
-
 @Component({
   selector: 'app-registro-mantenimiento',
   standalone: true,
@@ -54,84 +49,39 @@ type SolicitudMock = {
   templateUrl: './registro-mantenimiento.html',
 })
 export class RegistroMantenimientoComponent implements OnInit {
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private vehiculosService = inject(VehiculosService);
+  private articulosService = inject(ArticulosInventarioService);
+  private solicitudesService = inject(SolicitudesMantenimientoService);
+  private mantenimientosService = inject(MantenimientosService);
 
-  // =========================
-  // Catálogos (mock por ahora)
-  // =========================
-  unidadesCatalogo: { id: number; nombre: string; placa?: string }[] = [
-    { id: 1, nombre: 'Unidad 01', placa: 'GTO-123-A' },
-    { id: 2, nombre: 'Unidad 02', placa: 'GTO-456-B' },
-    { id: 3, nombre: 'Unidad 03', placa: 'GTO-789-C' },
-  ];
+  editId: number | null = null;
 
-  materialesCatalogo: MaterialCatalogo[] = [
-    { id: 101, nombre: 'Aceite 15W-40', precio: 180, unidad: 'L' },
-    { id: 102, nombre: 'Filtro de aceite', precio: 220, unidad: 'pz' },
-    { id: 103, nombre: 'Grasa', precio: 95, unidad: 'kg' },
-    { id: 104, nombre: 'Líquido de frenos', precio: 160, unidad: 'L' },
-  ];
+  unidadesCatalogo: Vehiculo[] = [];
+  materialesCatalogo: MaterialCatalogo[] = [];
 
-  // =========================
-  // Mock de solicitudes
-  // =========================
-  solicitudesMock: SolicitudMock[] = [
-    {
-      id: 1,
-      folio: 'SM-0001',
-      unidadId: 1,
-      tipoServicio: 'Correctivo',
-      prioridad: 'Alta',
-      kilometraje: 120345,
-      observaciones: 'Se detecta ruido en frenos delanteros y vibración al frenar.',
-    },
-    {
-      id: 2,
-      folio: 'SM-0002',
-      unidadId: 2,
-      tipoServicio: 'Preventivo',
-      prioridad: 'Media',
-      kilometraje: 98500,
-      observaciones: 'Solicitud de servicio preventivo general por kilometraje.',
-    },
-    {
-      id: 3,
-      folio: 'SM-0003',
-      unidadId: 3,
-      tipoServicio: 'Correctivo',
-      prioridad: 'Crítica',
-      kilometraje: 143220,
-      observaciones: 'La unidad presenta fuga de aceite visible en patio.',
-    },
-  ];
-
-  // =========================
-  // Control interno de flujo
-  // =========================
   modo: ModoRegistroMantenimiento = 'directo';
   solicitudId: number | null = null;
   origenMantenimiento: OrigenMantenimiento = 'DIRECTO';
   folioSolicitud: string | null = null;
 
-  // =========================
-  // Formulario
-  // =========================
   noOrden = '';
   fecha = '';
   fechaSiguienteMantenimiento = '';
   horasTecnico: number | null = null;
 
   unidadId: number | null = null;
-
   tipoServicio: TipoServicio = 'Preventivo';
   kilometraje: number | null = null;
 
-  estatus: EstatusMantenimiento = 'Terminado';
+  estatus: EstatusMantenimiento = 'Programado';
   nivelServicio: ServicioNivel = 'Servicio menor';
 
   tecnicos = '';
   observaciones = '';
 
-  checklist: Record<ChecklistKey, boolean> = {
+  checklist = {
     RevisionNiveles: false,
     LimpiezaAjusteFrenos: false,
     Engrasado: false,
@@ -145,7 +95,7 @@ export class RegistroMantenimientoComponent implements OnInit {
   otroTexto = '';
 
   materiales: MaterialLinea[] = [
-    { catalogoId: null, nombre: '', cantidad: 1, precioUnitario: 0 },
+    { catalogoId: null, nombre: '', cantidad: 1, precioUnitario: 0, unidad: '' },
   ];
 
   manoObra: number | null = null;
@@ -159,12 +109,18 @@ export class RegistroMantenimientoComponent implements OnInit {
     otroTexto: false,
   };
 
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute
-  ) {}
+  loading = false;
+  saving = false;
+  closing = false;
+  errorMessage = '';
+  successMessage = '';
 
   ngOnInit(): void {
+    this.cargarCatalogos();
+
+    const idParam = this.route.snapshot.paramMap.get('id');
+    this.editId = idParam ? Number(idParam) : null;
+
     this.route.queryParamMap.subscribe((params) => {
       const modoParam = params.get('modo');
       const solicitudIdParam = params.get('solicitudId');
@@ -186,30 +142,161 @@ export class RegistroMantenimientoComponent implements OnInit {
       this.origenMantenimiento = 'DIRECTO';
       this.folioSolicitud = null;
     });
+
+    if (this.editId !== null && !isNaN(this.editId)) {
+      this.cargarMantenimiento(this.editId);
+    }
+  }
+
+  get isFinalizado(): boolean {
+    return this.estatus === 'Finalizado';
+  }
+
+  get canCerrarDesdeFormulario(): boolean {
+    return !!this.editId
+      && this.estatus === 'En proceso'
+      && !!this.fecha
+      && this.fecha <= this.getHoyLocal();
+  }
+
+  private cargarCatalogos(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.vehiculosService.getVehiculosActivos().subscribe({
+      next: (data) => {
+        this.unidadesCatalogo = data ?? [];
+      },
+      error: (error) => {
+        console.error('Error al cargar unidades:', error);
+        this.errorMessage = 'No se pudieron cargar las unidades.';
+      }
+    });
+
+    this.articulosService.getArticulosActivos().subscribe({
+      next: (data) => {
+        this.materialesCatalogo = (data ?? []).map((a: ArticuloInventario) => ({
+          id: a.id,
+          nombre: a.nombre,
+          precio: Number(a.costoPromedio ?? 0),
+          unidad: a.unidad
+        }));
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar materiales:', error);
+        this.errorMessage = 'No se pudieron cargar los materiales del inventario.';
+        this.loading = false;
+      }
+    });
   }
 
   private precargarDesdeSolicitud(id: number): void {
-    const solicitud = this.solicitudesMock.find((s) => s.id === id);
-
-    if (!solicitud) return;
-
-    this.folioSolicitud = solicitud.folio;
-    this.unidadId = solicitud.unidadId;
-    this.tipoServicio = solicitud.tipoServicio;
-    this.kilometraje = solicitud.kilometraje;
-    this.observaciones = solicitud.observaciones;
+    this.solicitudesService.getSolicitudById(id).subscribe({
+      next: (solicitud: SolicitudMantenimiento) => {
+        this.folioSolicitud = solicitud.folio;
+        this.unidadId = solicitud.vehiculoId;
+        this.tipoServicio = solicitud.tipoServicio;
+        this.kilometraje = solicitud.kilometraje ?? null;
+        this.observaciones = solicitud.observaciones ?? '';
+      },
+      error: (error) => {
+        console.error('Error al cargar solicitud:', error);
+        this.errorMessage = 'No se pudo cargar la solicitud de mantenimiento.';
+      }
+    });
   }
 
-  // =========================
-  // Helpers materiales
-  // =========================
+  private cargarMantenimiento(id: number): void {
+    this.loading = true;
+
+    this.mantenimientosService.getMantenimientoById(id).subscribe({
+      next: (m) => {
+        this.noOrden = m.noOrden ?? '';
+        this.fecha = this.toDateInput(m.fecha);
+        this.fechaSiguienteMantenimiento = this.toDateInput(m.fechaSiguienteMantenimiento);
+        this.horasTecnico = m.horasTecnico ?? null;
+        this.unidadId = m.vehiculoId;
+        this.tipoServicio = m.tipoServicio as TipoServicio;
+        this.kilometraje = m.kilometraje;
+        this.estatus = (m.estatus === 'Terminado' ? 'Finalizado' : m.estatus) as EstatusMantenimiento;
+        this.nivelServicio = m.nivelServicio as ServicioNivel;
+        this.tecnicos = m.tecnicosTexto ?? '';
+        this.observaciones = m.observaciones ?? '';
+        this.origenMantenimiento = (m.origenMantenimiento ?? 'DIRECTO') as OrigenMantenimiento;
+        this.solicitudId = m.solicitudMantenimientoId ?? null;
+
+        this.checklist = {
+          RevisionNiveles: m.revisionNiveles,
+          LimpiezaAjusteFrenos: m.limpiezaAjusteFrenos,
+          Engrasado: m.engrasado,
+          RevisionLuces: m.revisionLuces,
+          RevisionSuspension: m.revisionSuspension,
+          RevisionCarroceria: m.revisionCarroceria,
+          RevisionSistemaElectrico: m.revisionSistemaElectrico,
+          Otro: m.checklistOtro,
+        };
+
+        this.otroTexto = m.checklistOtroTexto ?? '';
+        this.manoObra = Number(m.manoObra ?? 0);
+
+        this.materiales = (m.detalles ?? []).map((d) => ({
+          catalogoId: d.articuloInventarioId,
+          nombre: d.articuloNombre,
+          unidad: d.unidad,
+          cantidad: Number(d.cantidad ?? 0),
+          precioUnitario: Number(d.precioUnitarioAplicado ?? 0),
+        }));
+
+        if (this.materiales.length === 0) {
+          this.materiales = [{ catalogoId: null, nombre: '', cantidad: 1, precioUnitario: 0, unidad: '' }];
+        }
+
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar mantenimiento:', error);
+        this.errorMessage = 'No se pudo cargar el mantenimiento.';
+        this.loading = false;
+      }
+    });
+  }
+
+  private toDateInput(value: string): string {
+    if (!value) return '';
+    return value.substring(0, 10);
+  }
+
+  private getHoyLocal(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = `${now.getMonth() + 1}`.padStart(2, '0');
+    const day = `${now.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private estatusRequiereFechaVigente(): boolean {
+    return this.estatus === 'En proceso' || this.estatus === 'Finalizado';
+  }
+
+  private validarFechaContraEstatus(): boolean {
+    if (!this.estatusRequiereFechaVigente()) {
+      return true;
+    }
+
+    if (!this.fecha) {
+      return false;
+    }
+
+    return this.fecha <= this.getHoyLocal();
+  }
 
   onSelectMaterial(line: MaterialLinea): void {
     const item = this.materialesCatalogo.find((m) => m.id === line.catalogoId);
 
     if (!item) {
       line.nombre = '';
-      line.unidad = undefined;
+      line.unidad = '';
       line.precioUnitario = 0;
       return;
     }
@@ -229,6 +316,7 @@ export class RegistroMantenimientoComponent implements OnInit {
       nombre: '',
       cantidad: 1,
       precioUnitario: 0,
+      unidad: '',
     });
   }
 
@@ -241,6 +329,7 @@ export class RegistroMantenimientoComponent implements OnInit {
         nombre: '',
         cantidad: 1,
         precioUnitario: 0,
+        unidad: '',
       });
     }
   }
@@ -250,7 +339,6 @@ export class RegistroMantenimientoComponent implements OnInit {
     const price = Number(line.precioUnitario ?? 0);
 
     if (!isFinite(qty) || !isFinite(price)) return 0;
-
     return Math.max(0, qty) * Math.max(0, price);
   }
 
@@ -262,10 +350,6 @@ export class RegistroMantenimientoComponent implements OnInit {
     const mo = Number(this.manoObra ?? 0);
     return this.totalMateriales() + (isFinite(mo) ? Math.max(0, mo) : 0);
   }
-
-  // =========================
-  // Validación
-  // =========================
 
   private isValid(): boolean {
     this.touched.fecha = true;
@@ -283,63 +367,132 @@ export class RegistroMantenimientoComponent implements OnInit {
     const okUnidad = this.unidadId !== null;
     const okKm = this.kilometraje !== null && this.kilometraje >= 0;
     const okTec = this.tecnicos.trim().length > 0;
+    const okOtro = !this.checklist.Otro || this.otroTexto.trim().length > 0;
+    const okFechaEstatus = this.validarFechaContraEstatus();
 
-    const okOtro =
-      !this.checklist.Otro ||
-      this.otroTexto.trim().length > 0;
+    if (!okFechaEstatus) {
+      this.errorMessage =
+        'No se puede iniciar o finalizar un mantenimiento antes de la fecha programada. Actualiza la fecha primero.';
+    }
 
-    return okFecha && okFechaSiguiente && okUnidad && okKm && okTec && okOtro;
+    return okFecha && okFechaSiguiente && okUnidad && okKm && okTec && okOtro && okFechaEstatus;
   }
-
-  // =========================
-  // Navegación
-  // =========================
 
   onCancelar(): void {
     this.router.navigate(['/mantenimientos']);
   }
 
-  // =========================
-  // Guardar
-  // =========================
+  onCerrarMantenimiento(): void {
+    if (!this.editId) return;
+
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (!this.fecha || this.fecha > this.getHoyLocal()) {
+      this.errorMessage =
+        'No se puede finalizar un mantenimiento antes de la fecha programada. Actualiza la fecha primero.';
+      return;
+    }
+
+    const confirmar = confirm(`¿Deseas cerrar el mantenimiento ${this.noOrden || '#' + this.editId}?`);
+    if (!confirmar) return;
+
+    this.closing = true;
+
+    this.mantenimientosService.cerrarMantenimiento(this.editId).subscribe({
+      next: (response) => {
+        this.closing = false;
+        this.successMessage = response?.message || 'Mantenimiento cerrado correctamente.';
+        this.router.navigate(['/mantenimientos']);
+      },
+      error: (error) => {
+        console.error('Error al cerrar mantenimiento:', error);
+        this.errorMessage =
+          error?.error?.message ||
+          error?.error?.detail ||
+          error?.error ||
+          'No se pudo cerrar el mantenimiento.';
+        this.closing = false;
+      }
+    });
+  }
 
   onGuardar(): void {
-    if (!this.isValid()) return;
+    this.errorMessage = '';
+    this.successMessage = '';
 
-    const payload = {
-      cabecera: {
-        noOrden: this.noOrden.trim() || null,
-        fecha: this.fecha,
-        fechaSiguienteMantenimiento: this.fechaSiguienteMantenimiento,
-        horasTecnico: this.horasTecnico,
-        unidadId: this.unidadId,
-        tipoServicio: this.tipoServicio,
-        kilometraje: this.kilometraje,
-        estatus: this.estatus,
-        nivelServicio: this.nivelServicio,
-        tecnicosTexto: this.tecnicos.trim(),
-        observaciones: this.observaciones.trim() || null,
-        origenMantenimiento: this.origenMantenimiento,
-        solicitudId: this.solicitudId,
-        checklist: this.checklist,
-        otroTexto: this.checklist.Otro ? this.otroTexto.trim() : null,
-        manoObra: this.manoObra ?? 0,
-        totalMateriales: this.totalMateriales(),
-        totalFinalServicio: this.totalFinal(),
-      },
+    if (!this.isValid()) {
+      if (!this.errorMessage) {
+        this.errorMessage = 'Revisa los campos obligatorios.';
+      }
+      return;
+    }
 
-      detalles: this.materiales
-        .filter((m) => m.catalogoId !== null && m.cantidad > 0)
-        .map((m) => ({
-          articuloId: m.catalogoId,
-          cantidad: m.cantidad,
-          precioUnitarioAplicado: m.precioUnitario,
-          subtotal: this.materialSubtotal(m),
-        }))
+    const estatusParaGuardar: EstatusMantenimiento =
+      this.editId && this.estatus === 'Finalizado' ? 'En proceso' : this.estatus;
+
+    if (this.editId && this.estatus === 'Finalizado') {
+      this.errorMessage =
+        'Para finalizar un mantenimiento usa el botón "Cerrar mantenimiento".';
+      return;
+    }
+
+    const detalles: DetalleMantenimientoRequest[] = this.materiales
+      .filter((m) => m.catalogoId !== null && m.cantidad > 0)
+      .map((m) => ({
+        articuloInventarioId: m.catalogoId as number,
+        cantidad: Number(m.cantidad ?? 0),
+        precioUnitarioAplicado: Number(m.precioUnitario ?? 0),
+      }));
+
+    const payload: CrearMantenimientoRequest = {
+      fecha: this.fecha,
+      fechaSiguienteMantenimiento: this.fechaSiguienteMantenimiento,
+      horasTecnico: this.horasTecnico,
+      vehiculoId: this.unidadId as number,
+      tipoServicio: this.tipoServicio,
+      kilometraje: this.kilometraje as number,
+      estatus: estatusParaGuardar,
+      nivelServicio: this.nivelServicio,
+      tecnicosTexto: this.tecnicos.trim(),
+      observaciones: this.observaciones.trim() || null,
+      origenMantenimiento: this.origenMantenimiento,
+      solicitudMantenimientoId: this.solicitudId,
+
+      revisionNiveles: this.checklist.RevisionNiveles,
+      limpiezaAjusteFrenos: this.checklist.LimpiezaAjusteFrenos,
+      engrasado: this.checklist.Engrasado,
+      revisionLuces: this.checklist.RevisionLuces,
+      revisionSuspension: this.checklist.RevisionSuspension,
+      revisionCarroceria: this.checklist.RevisionCarroceria,
+      revisionSistemaElectrico: this.checklist.RevisionSistemaElectrico,
+      checklistOtro: this.checklist.Otro,
+      checklistOtroTexto: this.checklist.Otro ? this.otroTexto.trim() : null,
+
+      manoObra: Number(this.manoObra ?? 0),
+      detalles
     };
 
-    console.log('Payload mantenimiento:', payload);
+    this.saving = true;
 
-    this.router.navigate(['/mantenimientos']);
+    const request$ = this.editId
+      ? this.mantenimientosService.actualizarMantenimiento(this.editId, payload)
+      : this.mantenimientosService.crearMantenimiento(payload);
+
+    request$.subscribe({
+      next: (response) => {
+        this.saving = false;
+        this.successMessage = response?.message || (this.editId
+          ? 'Mantenimiento actualizado correctamente.'
+          : 'Mantenimiento creado correctamente.');
+
+        this.router.navigate(['/mantenimientos']);
+      },
+      error: (error) => {
+        console.error('Error al guardar mantenimiento:', error);
+        this.errorMessage = error?.error?.message || error?.error || 'No se pudo guardar el mantenimiento.';
+        this.saving = false;
+      }
+    });
   }
 }

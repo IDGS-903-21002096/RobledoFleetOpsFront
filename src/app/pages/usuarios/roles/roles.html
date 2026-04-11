@@ -72,6 +72,14 @@
       </form>
     </div>
 
+    <div *ngIf="loading" class="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+      Cargando roles...
+    </div>
+
+    <div *ngIf="errorMessage" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+      {{ errorMessage }}
+    </div>
+
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 
       <div
@@ -169,6 +177,13 @@
         </div>
       </div>
 
+    </div>
+
+    <div
+      *ngIf="!loading && !errorMessage && filteredRoles().length === 0"
+      class="mt-6 rounded-2xl border border-slate-200 bg-white px-5 py-6 text-center text-sm text-slate-500 shadow-sm"
+    >
+      No se encontraron roles.
     </div>
 
     <div

@@ -1,10 +1,22 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+
+import {
+  ArticulosInventarioService,
+  CrearArticuloInventarioMultipleRequest,
+  CrearArticuloInventarioRequest,
+  EditarArticuloInventarioRequest
+} from '../../../../services/articulos-inventario.service';
+
+import {
+  GrupoInventario,
+  GruposInventarioService
+} from '../../../../services/grupos-inventario.service';
 
 type ModoRegistro = 'individual' | 'multiple';
 
@@ -14,7 +26,7 @@ interface ArticuloForm {
   modelo: string;
   puntoReorden: number | null;
   descripcion: string;
-  grupo: string;
+  grupoInventarioId: number | null;
   unidad: string;
 }
 
@@ -27,41 +39,53 @@ interface ArticuloRow extends ArticuloForm {}
   templateUrl: './registro-articulo.html',
   styleUrl: './registro-articulo.scss',
 })
-export class RegistroArticuloComponent {
+export class RegistroArticuloComponent implements OnInit {
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private articulosService = inject(ArticulosInventarioService);
+  private gruposService = inject(GruposInventarioService);
+
+  editId: number | null = null;
   modo: ModoRegistro = 'individual';
 
-  // Catálogos
-  grupos: string[] = ['HERRAMIENTA', 'REFACCIÓN', 'LUBRICANTE', 'CONSUMIBLE', 'OTRO'];
+  grupos: GrupoInventario[] = [];
   unidades: string[] = ['pz', 'lt', 'kg', 'm', 'jgo', 'caja'];
 
-  // Form individual
   form: ArticuloForm = this.getEmptyForm();
-
-  // Tabla múltiple
   rows: ArticuloRow[] = [this.getEmptyForm()];
 
-  // Validación UI
   intentoGuardar = false;
   intentoGuardarMultiple = false;
 
-  // Mensajes UI
   msg = '';
+  errorMessage = '';
+  loading = false;
+  saving = false;
 
-  constructor(private router: Router) {}
+  ngOnInit(): void {
+    this.cargarGrupos();
 
-  // -------------------------
-  // Tabs
-  // -------------------------
+    const idParam = this.route.snapshot.paramMap.get('id');
+    this.editId = idParam ? Number(idParam) : null;
+
+    if (this.editId !== null && !Number.isNaN(this.editId)) {
+      this.modo = 'individual';
+      this.cargarArticulo(this.editId);
+    } else {
+      this.editId = null;
+    }
+  }
+
   setModo(m: ModoRegistro): void {
+    if (this.editId !== null) return;
+
     this.msg = '';
+    this.errorMessage = '';
     this.intentoGuardar = false;
     this.intentoGuardarMultiple = false;
     this.modo = m;
   }
 
-  // -------------------------
-  // Helpers
-  // -------------------------
   private getEmptyForm(): ArticuloForm {
     return {
       codigo: '',
@@ -69,20 +93,61 @@ export class RegistroArticuloComponent {
       modelo: '',
       puntoReorden: null,
       descripcion: '',
-      grupo: '',
+      grupoInventarioId: null,
       unidad: '',
     };
   }
 
   private isValidArticulo(a: ArticuloForm): boolean {
-    return !!a.codigo.trim() && !!a.nombre.trim() && !!a.grupo && !!a.unidad;
+    return !!a.codigo.trim() && !!a.nombre.trim() && !!a.grupoInventarioId && !!a.unidad;
   }
 
-  // -------------------------
-  // Acciones Individual
-  // -------------------------
+  private cargarGrupos(): void {
+    this.gruposService.getGruposActivos().subscribe({
+      next: (data) => {
+        this.grupos = data ?? [];
+      },
+      error: (error) => {
+        console.error('Error al cargar grupos:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudieron cargar los grupos.';
+      }
+    });
+  }
+
+  private cargarArticulo(id: number): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.articulosService.getArticuloById(id).subscribe({
+      next: (articulo) => {
+        this.form = {
+          codigo: articulo.codigo ?? '',
+          nombre: articulo.nombre ?? '',
+          modelo: articulo.modelo ?? '',
+          puntoReorden: articulo.puntoReorden ?? null,
+          descripcion: articulo.descripcion ?? '',
+          grupoInventarioId: articulo.grupoInventarioId ?? null,
+          unidad: articulo.unidad ?? '',
+        };
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar artículo:', error);
+        this.loading = false;
+
+        if (error?.status === 404) {
+          this.router.navigate(['/inventario']);
+          return;
+        }
+
+        this.errorMessage = error?.error?.mensaje || 'No se pudo cargar el artículo.';
+      }
+    });
+  }
+
   guardarIndividual(continuar: boolean): void {
     this.msg = '';
+    this.errorMessage = '';
     this.intentoGuardar = true;
 
     if (!this.isValidArticulo(this.form)) {
@@ -90,24 +155,63 @@ export class RegistroArticuloComponent {
       return;
     }
 
-    // Sin backend (mock)
-    this.msg = continuar
-      ? 'Artículo guardado (mock). Puedes capturar otro.'
-      : 'Artículo guardado (mock).';
+    const payloadBase = {
+      codigo: this.form.codigo.trim().toUpperCase(),
+      nombre: this.form.nombre.trim(),
+      modelo: this.form.modelo?.trim() || null,
+      puntoReorden: this.form.puntoReorden,
+      descripcion: this.form.descripcion?.trim() || null,
+      unidad: this.form.unidad,
+      grupoInventarioId: this.form.grupoInventarioId as number,
+    };
 
-    if (continuar) {
-      this.form = this.getEmptyForm();
-      this.intentoGuardar = false;
+    this.saving = true;
+
+    if (this.editId !== null) {
+      const payload: EditarArticuloInventarioRequest = {
+        id: this.editId,
+        ...payloadBase,
+      };
+
+      this.articulosService.editarArticulo(payload).subscribe({
+        next: (response) => {
+          this.saving = false;
+          this.msg = response?.mensaje || 'Artículo actualizado correctamente.';
+          this.router.navigate(['/inventario']);
+        },
+        error: (error) => {
+          console.error('Error al actualizar artículo:', error);
+          this.errorMessage = error?.error?.mensaje || 'No se pudo actualizar el artículo.';
+          this.saving = false;
+        }
+      });
+
       return;
     }
 
-    // Si NO continuar: regresamos al listado (opcional)
-    // this.router.navigate(['/inventario']);
+    const payload: CrearArticuloInventarioRequest = payloadBase;
+
+    this.articulosService.crearArticulo(payload).subscribe({
+      next: (response) => {
+        this.saving = false;
+        this.msg = response?.mensaje || 'Artículo creado correctamente.';
+
+        if (continuar) {
+          this.form = this.getEmptyForm();
+          this.intentoGuardar = false;
+          return;
+        }
+
+        this.router.navigate(['/inventario']);
+      },
+      error: (error) => {
+        console.error('Error al crear artículo:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudo crear el artículo.';
+        this.saving = false;
+      }
+    });
   }
 
-  // -------------------------
-  // Acciones Múltiple
-  // -------------------------
   agregarFila(): void {
     this.rows.push(this.getEmptyForm());
   }
@@ -121,27 +225,47 @@ export class RegistroArticuloComponent {
 
   guardarMultiple(): void {
     this.msg = '';
+    this.errorMessage = '';
     this.intentoGuardarMultiple = true;
 
-    const validas = this.rows.filter(r => this.isValidArticulo(r));
-    if (validas.length !== this.rows.length) {
+    const todasValidas = this.rows.every(r => this.isValidArticulo(r));
+    if (!todasValidas) {
       this.msg = 'Hay filas incompletas. Completa los campos obligatorios en cada fila.';
       return;
     }
 
-    // Sin backend (mock)
-    this.msg = `Se guardaron ${this.rows.length} artículo(s) (mock).`;
+    const articulos = this.rows.map(r => ({
+      codigo: r.codigo.trim().toUpperCase(),
+      nombre: r.nombre.trim(),
+      modelo: r.modelo?.trim() || null,
+      puntoReorden: r.puntoReorden,
+      descripcion: r.descripcion?.trim() || null,
+      unidad: r.unidad,
+      grupoInventarioId: r.grupoInventarioId as number,
+    }));
 
-    // Limpiar
-    this.rows = [this.getEmptyForm()];
-    this.intentoGuardarMultiple = false;
+    const payload: CrearArticuloInventarioMultipleRequest = {
+      articulos
+    };
+
+    this.saving = true;
+
+    this.articulosService.crearArticulosMultiples(payload).subscribe({
+      next: (response) => {
+        this.saving = false;
+        this.msg = response?.mensaje || `Se guardaron ${this.rows.length} artículo(s) correctamente.`;
+        this.rows = [this.getEmptyForm()];
+        this.intentoGuardarMultiple = false;
+      },
+      error: (error) => {
+        console.error('Error al guardar artículos múltiples:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudieron guardar los artículos.';
+        this.saving = false;
+      }
+    });
   }
 
-  // -------------------------
-  // Navegación
-  // -------------------------
   onCancelar(): void {
-    // Regresar a inventario
     this.router.navigate(['/inventario']);
   }
 }

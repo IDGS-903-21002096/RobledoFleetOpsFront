@@ -22,10 +22,24 @@
       </button>
     </div>
 
+    <div
+      *ngIf="errorMessage"
+      class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+    >
+      {{ errorMessage }}
+    </div>
+
+    <div
+      *ngIf="successMessage"
+      class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700"
+    >
+      {{ successMessage }}
+    </div>
+
     <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div></div>
 
-      <form class="w-full md:max-w-md">
+      <form class="w-full md:max-w-md" (submit)="$event.preventDefault()">
         <label for="searchRecordatorios" class="sr-only">Buscar</label>
         <div class="relative">
           <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
@@ -55,6 +69,7 @@
             placeholder="Filtrar por orden, unidad, estatus, tipo, km..."
             [(ngModel)]="search"
             name="search"
+            (input)="onSearchChange()"
           />
 
           <button
@@ -89,14 +104,20 @@
           </thead>
 
           <tbody>
-            <tr *ngIf="recordatorios?.length === 0">
+            <tr *ngIf="loading">
+              <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                Cargando recordatorios...
+              </td>
+            </tr>
+
+            <tr *ngIf="!loading && filteredRecordatorios().length === 0">
               <td colspan="8" class="px-6 py-10 text-center text-gray-500">
                 No hay recordatorios registrados.
               </td>
             </tr>
 
             <tr
-              *ngFor="let r of filteredRecordatorios()"
+              *ngFor="let r of paginatedRecordatorios(); trackBy: trackByRecordatorioId"
               class="border-t border-gray-100 hover:bg-gray-50"
             >
               <td class="px-6 py-4">
@@ -105,12 +126,12 @@
               </td>
 
               <td class="px-6 py-4">
-                {{ r.fecha }}
+                {{ r.fecha | date:'yyyy-MM-dd' }}
               </td>
 
               <td class="px-6 py-4">
                 <div class="font-semibold text-gray-900">{{ r.unidad }}</div>
-                <div class="text-xs text-gray-500">Unidad ID: {{ r.unidadId }}</div>
+                <div class="text-xs text-gray-500">Unidad ID: {{ r.vehiculoId }}</div>
               </td>
 
               <td class="px-6 py-4">
@@ -128,15 +149,7 @@
               <td class="px-6 py-4">
                 <span
                   class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-                  [ngClass]="
-                    r.estatus === 'Terminado'
-                      ? 'bg-green-100 text-green-700'
-                      : (r.estatus === 'Cancelado'
-                          ? 'bg-red-100 text-red-700'
-                          : (r.estatus === 'En proceso'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-yellow-100 text-yellow-800'))
-                  "
+                  [ngClass]="getEstatusClass(r.estatus)"
                 >
                   {{ r.estatus }}
                 </span>
@@ -172,8 +185,50 @@
       </div>
 
       <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-xs text-gray-600">
-        <span>Total: <span class="font-semibold">{{ filteredRecordatorios().length || 0 }}</span></span>
+        <span>
+          Mostrando:
+          <span class="font-semibold">{{ inicioRango }}</span> -
+          <span class="font-semibold">{{ finRango }}</span>
+          de <span class="font-semibold">{{ filteredRecordatorios().length || 0 }}</span>
+        </span>
         <span class="text-gray-400">Robledo FleetOps</span>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="text-xs text-gray-600">
+        Página <span class="font-semibold">{{ page }}</span> / {{ totalPages }}
+      </div>
+
+      <div class="flex items-center gap-2">
+        <select
+          class="rounded-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          [(ngModel)]="pageSize"
+          (ngModelChange)="cambiarPageSize()"
+        >
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+        </select>
+
+        <button
+          type="button"
+          class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          (click)="prevPage()"
+          [disabled]="page === 1"
+        >
+          Anterior
+        </button>
+
+        <button
+          type="button"
+          class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          (click)="nextPage()"
+          [disabled]="page >= totalPages"
+        >
+          Siguiente
+        </button>
       </div>
     </div>
   </div>

@@ -17,26 +17,45 @@
                  text-white bg-gradient-to-r from-slate-600 via-slate-700 to-slate-800
                  hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-slate-300
                  font-semibold rounded-full text-sm px-5 py-2.5
-                 text-center leading-5 shadow transition active:scale-[0.98]"
+                 text-center leading-5 shadow transition active:scale-[0.98]
+                 disabled:opacity-60 disabled:cursor-not-allowed"
           (click)="onCancelar()"
+          [disabled]="saving"
         >
           Regresar
         </button>
       </div>
     </div>
 
+    <div
+      *ngIf="errorMessage"
+      class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"
+    >
+      {{ errorMessage }}
+    </div>
+
+    <div
+      *ngIf="successMessage"
+      class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700"
+    >
+      {{ successMessage }}
+    </div>
+
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div class="p-6">
-
         <h2 class="mb-4 text-sm font-semibold text-slate-900">Datos de la solicitud</h2>
+
+        <div *ngIf="loadingVehiculos" class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          Cargando unidades...
+        </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label class="mb-1 block text-sm font-medium text-slate-700">Folio (referencia)</label>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Folio</label>
             <input
               type="text"
               class="block w-full rounded-full border border-gray-300 bg-slate-50 p-3 text-sm text-gray-500 shadow-sm"
-              [value]="folioReferencia"
+              value="Se genera automáticamente"
               readonly
             />
           </div>
@@ -46,8 +65,8 @@
             <select
               class="block w-full rounded-full border text-sm text-gray-900 shadow-sm
                      focus:border-blue-500 focus:ring-blue-500 p-3"
-              [ngClass]="touched.prioridad && !prioridad ? 'border-red-300' : 'border-gray-300'"
-              [(ngModel)]="prioridad"
+              [ngClass]="touched.prioridad && !form.prioridad ? 'border-red-300' : 'border-gray-300'"
+              [(ngModel)]="form.prioridad"
               name="prioridad"
               (blur)="touched.prioridad = true"
             >
@@ -57,7 +76,7 @@
               <option value="Alta">Alta</option>
               <option value="Crítica">Crítica</option>
             </select>
-            <p *ngIf="touched.prioridad && !prioridad" class="mt-1 text-xs text-red-600">
+            <p *ngIf="touched.prioridad && !form.prioridad" class="mt-1 text-xs text-red-600">
               Selecciona una prioridad.
             </p>
           </div>
@@ -67,8 +86,8 @@
             <select
               class="block w-full rounded-full border text-sm text-gray-900 shadow-sm
                      focus:border-blue-500 focus:ring-blue-500 p-3"
-              [ngClass]="touched.tipoServicio && !tipoServicio ? 'border-red-300' : 'border-gray-300'"
-              [(ngModel)]="tipoServicio"
+              [ngClass]="touched.tipoServicio && !form.tipoServicio ? 'border-red-300' : 'border-gray-300'"
+              [(ngModel)]="form.tipoServicio"
               name="tipoServicio"
               (blur)="touched.tipoServicio = true"
             >
@@ -76,7 +95,7 @@
               <option value="Preventivo">Preventivo</option>
               <option value="Correctivo">Correctivo</option>
             </select>
-            <p *ngIf="touched.tipoServicio && !tipoServicio" class="mt-1 text-xs text-red-600">
+            <p *ngIf="touched.tipoServicio && !form.tipoServicio" class="mt-1 text-xs text-red-600">
               Selecciona el tipo de servicio.
             </p>
           </div>
@@ -86,17 +105,17 @@
             <select
               class="block w-full rounded-full border text-sm text-gray-900 shadow-sm
                      focus:border-blue-500 focus:ring-blue-500 p-3"
-              [ngClass]="touched.unidad && unidadId === null ? 'border-red-300' : 'border-gray-300'"
-              [(ngModel)]="unidadId"
-              name="unidadId"
+              [ngClass]="touched.unidad && form.vehiculoId === null ? 'border-red-300' : 'border-gray-300'"
+              [(ngModel)]="form.vehiculoId"
+              name="vehiculoId"
               (blur)="touched.unidad = true"
             >
               <option [ngValue]="null">Selecciona una unidad...</option>
               <option *ngFor="let u of unidadesCatalogo" [ngValue]="u.id">
-                {{ u.nombre }}{{ u.placa ? ' • ' + u.placa : '' }}
+                {{ u.nombreVehiculo }}{{ u.placa ? ' • ' + u.placa : '' }}
               </option>
             </select>
-            <p *ngIf="touched.unidad && unidadId === null" class="mt-1 text-xs text-red-600">
+            <p *ngIf="touched.unidad && form.vehiculoId === null" class="mt-1 text-xs text-red-600">
               Selecciona una unidad.
             </p>
           </div>
@@ -109,8 +128,20 @@
               class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
                      placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
               placeholder="Ej. 120345"
-              [(ngModel)]="kilometraje"
+              [(ngModel)]="form.kilometraje"
               name="kilometraje"
+            />
+          </div>
+
+          <div class="md:col-span-3">
+            <label class="mb-1 block text-sm font-medium text-slate-700">Solicitado por</label>
+            <input
+              type="text"
+              class="block w-full rounded-full border border-gray-300 bg-white p-3 text-sm text-gray-900 shadow-sm
+                     placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Nombre del solicitante"
+              [(ngModel)]="form.solicitadoPorNombre"
+              name="solicitadoPorNombre"
             />
           </div>
 
@@ -120,13 +151,13 @@
               rows="5"
               class="block w-full rounded-2xl border text-sm text-gray-900 shadow-sm
                      placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500 p-4 resize-none"
-              [ngClass]="touched.observaciones && observaciones.trim().length === 0 ? 'border-red-300' : 'border-gray-300'"
+              [ngClass]="touched.observaciones && form.observaciones.trim().length === 0 ? 'border-red-300' : 'border-gray-300'"
               placeholder="Describe la falla, solicitud o motivo del mantenimiento..."
-              [(ngModel)]="observaciones"
+              [(ngModel)]="form.observaciones"
               name="observaciones"
               (blur)="touched.observaciones = true"
             ></textarea>
-            <p *ngIf="touched.observaciones && observaciones.trim().length === 0" class="mt-1 text-xs text-red-600">
+            <p *ngIf="touched.observaciones && form.observaciones.trim().length === 0" class="mt-1 text-xs text-red-600">
               Captura las observaciones de la solicitud.
             </p>
           </div>
@@ -136,7 +167,7 @@
 
         <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
           La solicitud se registrará con estatus inicial
-          <span class="font-semibold">Pendiente</span>.
+          <span class="font-semibold">Pendiente</span>. El folio y la fecha se generan automáticamente al guardar.
         </div>
 
         <div class="mt-8 flex items-center justify-end gap-3">
@@ -146,8 +177,10 @@
                    text-white bg-gradient-to-r from-slate-600 via-slate-700 to-slate-800
                    hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-slate-300
                    font-semibold rounded-full text-sm px-5 py-2.5
-                   text-center leading-5 shadow transition active:scale-[0.98]"
+                   text-center leading-5 shadow transition active:scale-[0.98]
+                   disabled:opacity-60 disabled:cursor-not-allowed"
             (click)="onCancelar()"
+            [disabled]="saving"
           >
             Cancelar
           </button>
@@ -158,13 +191,14 @@
                    text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                    hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
                    font-semibold rounded-full text-sm px-5 py-2.5
-                   text-center leading-5 shadow transition active:scale-[0.98]"
+                   text-center leading-5 shadow transition active:scale-[0.98]
+                   disabled:opacity-60 disabled:cursor-not-allowed"
             (click)="onGuardar()"
+            [disabled]="saving || loadingVehiculos"
           >
-            Guardar solicitud
+            {{ saving ? 'Guardando...' : 'Guardar solicitud' }}
           </button>
         </div>
-
       </div>
 
       <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4 text-xs text-gray-600">

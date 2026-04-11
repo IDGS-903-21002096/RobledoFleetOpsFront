@@ -1,11 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import { Vehiculo, VehiculosService } from '../../../../services/vehiculos.service';
 
-type StatusVehiculo = 'Asignado' | 'Disponible' | 'En taller';
+type StatusVehiculo = 'Asignado' | 'Disponible' | 'En taller' | 'Fuera de Servicio';
 
 type VehiculoDetalle = {
   id: number;
@@ -16,13 +17,13 @@ type VehiculoDetalle = {
   tipoVehiculo: string;
   statusVehiculo: StatusVehiculo;
   grupo?: string;
+  division?: string;
   numeroSerie?: string;
   placa?: string;
   color?: string;
   companiaSeguros?: string;
   polizaSeguro?: string;
   vigenciaPoliza?: string;
-
   inicioEstadisticas?: 'Fecha de registro' | 'Fecha de compra' | '';
   medidaUso?: 'Kilómetros' | 'Millas' | 'Horas' | '';
   medidaCombustible?: 'Litros' | 'Galones' | '';
@@ -35,74 +36,71 @@ type VehiculoDetalle = {
   templateUrl: './vehiculo-detalle.html',
   styleUrl: './vehiculo-detalle.scss',
 })
-export class VehiculoDetalleComponent {
-  vehiculoId: number | null = null;
+export class VehiculoDetalleComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private vehiculosService = inject(VehiculosService);
 
+  vehiculoId: number | null = null;
   vehiculo: VehiculoDetalle | null = null;
 
-  private readonly mockVehiculos: VehiculoDetalle[] = [
-    {
-      id: 1,
-      nombreVehiculo: 'Unidad 12',
-      marca: 'Mercedes',
-      modelo: 'Sprinter',
-      anio: 2022,
-      tipoVehiculo: 'Autobús',
-      statusVehiculo: 'Asignado',
-      grupo: 'Autobuses',
-      placa: 'GTO-123-A',
-      numeroSerie: '1HGCM82633A123456',
-      color: 'Blanco',
-      companiaSeguros: 'Qualitas',
-      polizaSeguro: 'POL-00012345',
-      vigenciaPoliza: '2026-12-31',
-      inicioEstadisticas: 'Fecha de compra',
-      medidaUso: 'Kilómetros',
-      medidaCombustible: 'Litros',
-    },
-    {
-      id: 2,
-      nombreVehiculo: 'Unidad 08',
-      marca: 'Nissan',
-      modelo: 'Urvan',
-      anio: 2021,
-      tipoVehiculo: 'Camioneta',
-      statusVehiculo: 'En taller',
-      inicioEstadisticas: 'Fecha de registro',
-      medidaUso: 'Kilómetros',
-      medidaCombustible: 'Litros',
-    },
-    {
-      id: 3,
-      nombreVehiculo: 'Unidad 20',
-      marca: 'Ford',
-      modelo: 'Transit',
-      anio: 2023,
-      tipoVehiculo: 'Camioneta',
-      statusVehiculo: 'Disponible',
-    },
-  ];
+  loading = false;
+  errorMessage = '';
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router
-  ) {
+  ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     this.vehiculoId = idParam ? Number(idParam) : null;
 
-    if (this.vehiculoId && !Number.isNaN(this.vehiculoId)) {
-      this.vehiculo = this.mockVehiculos.find((v) => v.id === this.vehiculoId) ?? null;
+    if (!this.vehiculoId || Number.isNaN(this.vehiculoId)) {
+      this.errorMessage = 'No se recibió un ID de vehículo válido.';
+      return;
     }
+
+    this.cargarVehiculo(this.vehiculoId);
+  }
+
+  private cargarVehiculo(id: number): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.vehiculosService.getVehiculoById(id).subscribe({
+      next: (data: Vehiculo) => {
+        this.vehiculo = {
+          id: data.id,
+          nombreVehiculo: data.nombreVehiculo,
+          marca: data.marca,
+          modelo: data.modelo,
+          anio: data.anio ?? null,
+          tipoVehiculo: data.tipoVehiculo,
+          statusVehiculo: data.statusInicial as StatusVehiculo,
+          grupo: data.grupo ?? '',
+          division: data.division ?? '',
+          numeroSerie: data.numeroSerie ?? '',
+          placa: data.placa ?? '',
+          color: data.color ?? '',
+          companiaSeguros: data.companiaSeguros ?? '',
+          polizaSeguro: data.polizaSeguro ?? '',
+          vigenciaPoliza: '',
+          inicioEstadisticas: (data.inicioEstadisticas as 'Fecha de registro' | 'Fecha de compra' | '') ?? '',
+          medidaUso: (data.medidaUso as 'Kilómetros' | 'Millas' | 'Horas' | '') ?? '',
+          medidaCombustible: (data.medidaCombustible as 'Litros' | 'Galones' | '') ?? '',
+        };
+
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar detalle del vehículo:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudo cargar el vehículo.';
+        this.loading = false;
+      }
+    });
   }
 
   statusBadgeClass(s: StatusVehiculo): string {
     if (s === 'Disponible') return 'bg-green-100 text-green-700';
     if (s === 'Asignado') return 'bg-blue-100 text-blue-700';
+    if (s === 'Fuera de Servicio') return 'bg-slate-200 text-slate-700';
     return 'bg-amber-100 text-amber-700';
-  }
-
-  formatDate(v?: string): string {
-    return v?.trim() ? v : '—';
   }
 
   safeText(v?: string | number | null): string {

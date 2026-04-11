@@ -1,262 +1,192 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
 import { CabeceraComponent } from '../../components/cabecera/cabecera';
 import { FooterComponent } from '../../components/footer/footer';
 
-type Unidad = 'pz' | 'lt' | 'kg' | 'm' | 'jgo';
+import {
+  ArticulosInventarioService,
+  ArticuloInventario
+} from '../../../services/articulos-inventario.service';
 
-interface InventarioItem {
-  codigo: string;
-  nombre: string;
-  descripcion?: string;
-  grupo: string;
-  existencia: number;
-  unidad: Unidad;
-  minimo?: number; // para badge "Stock bajo"
-  costoPromedio: number;
-  activo: boolean;
-}
+import { EntradasInventarioService } from '../../../services/entradas-inventario.service';
+import { SalidasInventarioService } from '../../../services/salidas-inventario.service';
 
 @Component({
   selector: 'app-inventario',
   standalone: true,
   imports: [CommonModule, FormsModule, CabeceraComponent, FooterComponent],
   templateUrl: './inventario.html',
-  styleUrl: './inventario.scss',
 })
-export class InventarioComponent {
-  // =========================
-  // Mock KPIs (inspirados en la referencia)
-  // =========================
-  kpiEntradas = 207_758.97;
-  kpiSalidas = 10_684.37;
+export class InventarioComponent implements OnInit {
 
-  // =========================
-  // Data mock
-  // =========================
-  items: InventarioItem[] = [
-    {
-      codigo: 'G141',
-      nombre: 'Disco de lija 6" X 6 G100',
-      descripcion: '',
-      grupo: 'HERRAMIENTA',
-      existencia: 0,
-      unidad: 'pz',
-      minimo: 5,
-      costoPromedio: 0,
-      activo: true,
-    },
-    {
-      codigo: 'H001',
-      nombre: 'Pistola de Pintura',
-      descripcion: 'Pistola de pintura funcional completa.',
-      grupo: 'HERRAMIENTA',
-      existencia: 2,
-      unidad: 'pz',
-      minimo: 1,
-      costoPromedio: 1250,
-      activo: true,
-    },
-    {
-      codigo: 'L020',
-      nombre: 'Aceite 15W-40',
-      descripcion: 'Aceite para motor diésel (galón).',
-      grupo: 'LUBRICANTE',
-      existencia: 18,
-      unidad: 'lt',
-      minimo: 10,
-      costoPromedio: 98.5,
-      activo: true,
-    },
-    {
-      codigo: 'R310',
-      nombre: 'Filtro de aire',
-      descripcion: 'Filtro de aire para autobús.',
-      grupo: 'REFACCIÓN',
-      existencia: 3,
-      unidad: 'pz',
-      minimo: 6,
-      costoPromedio: 420,
-      activo: true,
-    },
-    {
-      codigo: 'S777',
-      nombre: 'Sellador silicón',
-      descripcion: 'Sellador para juntas y carrocería.',
-      grupo: 'CONSUMIBLE',
-      existencia: 12,
-      unidad: 'pz',
-      minimo: 8,
-      costoPromedio: 55,
-      activo: false,
-    },
-  ];
+  private service = inject(ArticulosInventarioService);
+  private entradasService = inject(EntradasInventarioService);
+  private salidasService = inject(SalidasInventarioService);
+  private router = inject(Router);
 
-  // =========================
-  // Filtros
-  // =========================
-  busqueda = '';
-  filtroGrupo = '';
+  items: ArticuloInventario[] = [];
+  itemsFiltrados: ArticuloInventario[] = [];
+  itemsPaginados: ArticuloInventario[] = [];
+
   grupos: string[] = [];
 
-  // =========================
-  // Paginación
-  // =========================
+  busqueda = '';
+  filtroGrupo = '';
+
   page = 1;
-  pageSize = 10;
+  pageSize = 5;
 
-  // Derivados
-  itemsFiltrados: InventarioItem[] = [];
-  itemsPaginados: InventarioItem[] = [];
+  loading = false;
+  errorMessage = '';
 
-  constructor(private router: Router) {
-    this.grupos = Array.from(new Set(this.items.map(x => x.grupo))).sort();
-    this.aplicarFiltros();
+  Math = Math;
+
+  kpiEntradas = 0;
+  kpiSalidas = 0;
+
+  ngOnInit(): void {
+    this.cargarDatos();
   }
 
-  // KPI derivado: valor inventario actual (existencia * costoPromedio)
+  cargarDatos(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    forkJoin({
+      articulos: this.service.getArticulosActivos(),
+      resumenEntradas: this.entradasService.getResumen(),
+      resumenSalidas: this.salidasService.getResumen()
+    }).subscribe({
+      next: ({ articulos, resumenEntradas, resumenSalidas }) => {
+        this.items = articulos ?? [];
+        this.grupos = Array.from(new Set(this.items.map(x => x.grupo)));
+
+        this.kpiEntradas = resumenEntradas?.costoTotalEntradas ?? 0;
+        this.kpiSalidas = resumenSalidas?.costoTotalSalidas ?? 0;
+
+        this.aplicarFiltros();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar inventario:', error);
+        this.errorMessage = this.getLoadErrorMessage(error, 'el inventario');
+        this.items = [];
+        this.itemsFiltrados = [];
+        this.itemsPaginados = [];
+        this.grupos = [];
+        this.kpiEntradas = 0;
+        this.kpiSalidas = 0;
+        this.loading = false;
+      }
+    });
+  }
+
+  private getLoadErrorMessage(error: any, recurso: string): string {
+    const status = error?.status;
+
+    if (status === 403) {
+      return `Tu rol no tiene acceso a ${recurso}.`;
+    }
+
+    if (status === 401) {
+      return 'Tu sesión no es válida o ha expirado. Inicia sesión nuevamente.';
+    }
+
+    if (status === 0) {
+      return 'No fue posible conectar con el servidor.';
+    }
+
+    return `No se pudo cargar ${recurso}.`;
+  }
+
   get kpiValorInventario(): number {
-    return this.itemsFiltrados.reduce((acc, it) => acc + it.existencia * it.costoPromedio, 0);
-  }
-
-  // Rangos
-  get totalPages(): number {
-    const total = this.itemsFiltrados.length;
-    return Math.max(1, Math.ceil(total / this.pageSize));
-  }
-
-  get inicioRango(): number {
-    const total = this.itemsFiltrados.length;
-    if (total === 0) return 0;
-    return (this.page - 1) * this.pageSize + 1;
-  }
-
-  get finRango(): number {
-    const total = this.itemsFiltrados.length;
-    if (total === 0) return 0;
-    return Math.min(this.page * this.pageSize, total);
-  }
-
-  // Helper seguro para convertir a texto
-  private toText(v: unknown): string {
-    return v === null || v === undefined ? '' : String(v).toLowerCase();
+    return this.items.reduce((acc, x) => acc + (x.existencia * x.costoPromedio), 0);
   }
 
   aplicarFiltros(): void {
-    const q = (this.busqueda || '').trim().toLowerCase();
-    const g = (this.filtroGrupo || '').trim().toLowerCase();
+    const q = this.busqueda.toLowerCase();
 
-    this.itemsFiltrados = this.items.filter(it => {
-      // Filtro por grupo (si se seleccionó)
-      const matchGrupo = !g || this.toText(it.grupo) === g;
+    this.itemsFiltrados = this.items.filter(it =>
+      (!this.filtroGrupo || it.grupo === this.filtroGrupo) &&
+      (!q ||
+        it.codigo.toLowerCase().includes(q) ||
+        it.nombre.toLowerCase().includes(q) ||
+        (it.descripcion || '').toLowerCase().includes(q))
+    );
 
-      // Búsqueda global por cualquier campo relevante (como en los otros módulos)
-      const matchQuery =
-        !q ||
-        [
-          it.codigo,
-          it.nombre,
-          it.descripcion ?? '',
-          it.grupo,
-          it.unidad,
-          it.existencia,
-          it.minimo ?? '',
-          it.costoPromedio,
-          this.estatusTexto(it),          // "Activo / Inactivo / Stock bajo / Sin stock"
-          it.activo ? 'activo' : 'inactivo',
-        ]
-          .map(v => this.toText(v))
-          .some(txt => txt.includes(q));
-
-      return matchGrupo && matchQuery;
-    });
-
-    // Ajustar página si se sale del rango
-    this.page = Math.min(this.page, this.totalPages);
-    this.page = Math.max(1, this.page);
-
+    this.page = 1;
     this.refrescarPaginado();
   }
 
   refrescarPaginado(): void {
     const start = (this.page - 1) * this.pageSize;
-    const end = start + this.pageSize;
-    this.itemsPaginados = this.itemsFiltrados.slice(start, end);
+    this.itemsPaginados = this.itemsFiltrados.slice(start, start + this.pageSize);
   }
 
-  cambiarPageSize(): void {
-    this.page = 1;
-    this.refrescarPaginado();
+  get totalPages(): number {
+    return Math.ceil(this.itemsFiltrados.length / this.pageSize) || 1;
   }
 
   prevPage(): void {
-    if (this.page <= 1) return;
-    this.page -= 1;
-    this.refrescarPaginado();
-  }
-
-  nextPage(): void {
-    if (this.page >= this.totalPages) return;
-    this.page += 1;
-    this.refrescarPaginado();
-  }
-
-  // =========================
-  // UI Helpers (badges)
-  // =========================
-  estatusTexto(it: InventarioItem): string {
-    if (!it.activo) return 'Inactivo';
-    const min = it.minimo ?? 0;
-    if (min > 0 && it.existencia <= 0) return 'Sin stock';
-    if (min > 0 && it.existencia < min) return 'Stock bajo';
-    return 'Activo';
-  }
-
-  badgeClass(it: InventarioItem): string {
-    const est = this.estatusTexto(it);
-    switch (est) {
-      case 'Activo':
-        return 'bg-emerald-100 text-emerald-700';
-      case 'Stock bajo':
-        return 'bg-amber-100 text-amber-700';
-      case 'Sin stock':
-        return 'bg-rose-100 text-rose-700';
-      default:
-        return 'bg-slate-100 text-slate-700';
+    if (this.page > 1) {
+      this.page--;
+      this.refrescarPaginado();
     }
   }
 
-  trackByCodigo(_: number, it: InventarioItem): string {
-    return it.codigo;
+  nextPage(): void {
+    if (this.page < this.totalPages) {
+      this.page++;
+      this.refrescarPaginado();
+    }
   }
 
-  // =========================
-  // Acciones (mock)
-  // =========================
+  estatusTexto(it: ArticuloInventario): string {
+    if (!it.activo) return 'Inactivo';
+    if (it.existencia === 0) return 'Sin stock';
+    if (it.puntoReorden && it.existencia <= it.puntoReorden) return 'Stock bajo';
+    return 'Activo';
+  }
+
+  badgeClass(it: ArticuloInventario): string {
+    if (!it.activo) {
+      return 'inline-flex items-center rounded-full bg-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700';
+    }
+
+    if (it.existencia === 0) {
+      return 'inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700';
+    }
+
+    if (it.puntoReorden && it.existencia <= it.puntoReorden) {
+      return 'inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700';
+    }
+
+    return 'inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700';
+  }
+
   onRegistrarArticulo(): void {
     this.router.navigate(['/inventario/nuevo']);
   }
 
-  // Ya no lo usamos (lo puedes borrar si quieres)
-  onExportarCsv(): void {
-    alert('Exportar CSV (solo UI por ahora).');
+  onEditar(it: ArticuloInventario): void {
+    this.router.navigate(['/inventario', it.id, 'editar']);
   }
 
-  onEditar(it: InventarioItem): void {
-    // mock: usamos el código como :id
-    this.router.navigate(['/inventario', it.codigo, 'editar']);
+  onInactivar(it: ArticuloInventario): void {
+    if (!confirm('¿Inactivar artículo?')) return;
+
+    this.service.inactivarArticulo(it.id).subscribe(() => {
+      this.cargarDatos();
+    });
   }
 
-  onEliminar(it: InventarioItem): void {
-    const ok = confirm(`¿Eliminar el artículo ${it.codigo} - ${it.nombre}?`);
-    if (!ok) return;
-
-    // Mock delete en front
-    this.items = this.items.filter(x => x.codigo !== it.codigo);
-    this.grupos = Array.from(new Set(this.items.map(x => x.grupo))).sort();
-    this.aplicarFiltros();
+  onReactivar(it: ArticuloInventario): void {
+    this.service.reactivarArticulo(it.id).subscribe(() => {
+      this.cargarDatos();
+    });
   }
 }

@@ -1,18 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
-
-interface TipoVehiculo {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  enUso: number;
-  activo: boolean;
-}
+import { TipoVehiculo, TiposVehiculoService } from '../../../../services/tipos-vehiculo.service';
 
 @Component({
   selector: 'app-tipos',
@@ -21,22 +14,39 @@ interface TipoVehiculo {
   templateUrl: './tipos.html',
   styleUrl: './tipos.scss',
 })
-export class TiposComponent {
-  constructor(private router: Router) {}
+export class TiposComponent implements OnInit {
+  private router = inject(Router);
+  private tiposVehiculoService = inject(TiposVehiculoService);
 
   search: string = '';
+  loading: boolean = false;
+  errorMessage: string = '';
 
   isDetalleOpen: boolean = false;
   selectedTipo: TipoVehiculo | null = null;
 
-  tipos: TipoVehiculo[] = [
-    { id: 1, nombre: 'Automóvil', descripcion: 'Vehículo ligero.', enUso: 10, activo: true },
-    { id: 2, nombre: 'Camioneta', descripcion: 'Unidades tipo pickup/van.', enUso: 7, activo: true },
-    { id: 3, nombre: 'Autobús', descripcion: 'Transporte de personal.', enUso: 24, activo: true },
-    { id: 4, nombre: 'Camión', descripcion: 'Carga ligera/mediana.', enUso: 3, activo: true },
-    { id: 5, nombre: 'Van', descripcion: 'Unidades van.', enUso: 26, activo: true },
-    { id: 6, nombre: 'Tráiler', descripcion: 'Unidad articulada.', enUso: 12, activo: true },
-  ];
+  tipos: TipoVehiculo[] = [];
+
+  ngOnInit(): void {
+    this.cargarTipos();
+  }
+
+  cargarTipos(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.tiposVehiculoService.getTipos().subscribe({
+      next: (data) => {
+        this.tipos = data ?? [];
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar tipos de vehículo:', error);
+        this.errorMessage = 'No se pudieron cargar los tipos de vehículo.';
+        this.loading = false;
+      }
+    });
+  }
 
   private normalize(text: string): string {
     return (text || '')
@@ -85,6 +95,21 @@ export class TiposComponent {
       return;
     }
 
-    t.activo = !t.activo;
+    const request$ = t.activo
+      ? this.tiposVehiculoService.inactivarTipo(t.id)
+      : this.tiposVehiculoService.reactivarTipo(t.id);
+
+    request$.subscribe({
+      next: () => {
+        if (this.selectedTipo?.id === t.id) {
+          this.closeDetalle();
+        }
+        this.cargarTipos();
+      },
+      error: (error) => {
+        console.error('Error al cambiar estado del tipo:', error);
+        alert(error?.error?.mensaje || 'No se pudo cambiar el estado del tipo.');
+      }
+    });
   }
 }

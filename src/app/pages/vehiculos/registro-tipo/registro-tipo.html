@@ -15,8 +15,10 @@
           type="button"
           class="inline-flex items-center justify-center rounded-full
                  bg-gray-200 hover:bg-gray-300 text-gray-800
-                 text-sm font-semibold px-6 py-2.5 shadow-sm"
+                 text-sm font-semibold px-6 py-2.5 shadow-sm
+                 disabled:opacity-60 disabled:cursor-not-allowed"
           (click)="onRegresar()"
+          [disabled]="loading || saving"
         >
           Regresar
         </button>
@@ -27,12 +29,22 @@
                  text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                  hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
                  font-semibold rounded-full text-sm px-6 py-2.5
-                 text-center leading-5 shadow transition active:scale-[0.98]"
+                 text-center leading-5 shadow transition active:scale-[0.98]
+                 disabled:opacity-60 disabled:cursor-not-allowed"
           (click)="onGuardar()"
+          [disabled]="loading || saving"
         >
-          Guardar
+          {{ saving ? 'Guardando...' : 'Guardar' }}
         </button>
       </div>
+    </div>
+
+    <div *ngIf="loading" class="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+      Cargando información del tipo...
+    </div>
+
+    <div *ngIf="errorMessage" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+      {{ errorMessage }}
     </div>
 
     <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-5">
@@ -50,6 +62,7 @@
             placeholder="Ej. Autobús"
             [(ngModel)]="form.nombre"
             name="nombre"
+            [disabled]="loading || saving"
           />
           <p *ngIf="submitted && !form.nombre?.trim()" class="mt-1 text-xs text-red-600">
             El nombre es obligatorio.
@@ -69,12 +82,19 @@
             placeholder="Ej. Transporte de personal"
             [(ngModel)]="form.descripcion"
             name="descripcion"
+            [disabled]="loading || saving"
           />
         </div>
 
         <div class="md:col-span-2 flex md:justify-end md:items-end">
           <label class="inline-flex items-center cursor-pointer gap-3 select-none">
-            <input type="checkbox" class="sr-only peer" [(ngModel)]="form.activo" name="activo" />
+            <input
+              type="checkbox"
+              class="sr-only peer"
+              [(ngModel)]="form.activo"
+              name="activo"
+              [disabled]="loading || saving"
+            />
             <div
               class="relative w-11 h-6 bg-gray-200 rounded-full peer
                      peer-focus:ring-4 peer-focus:ring-blue-300
@@ -98,8 +118,10 @@
         type="button"
         class="inline-flex items-center justify-center rounded-full
                bg-gray-200 hover:bg-gray-300 text-gray-800
-               text-sm font-semibold px-6 py-2.5 shadow-sm"
+               text-sm font-semibold px-6 py-2.5 shadow-sm
+               disabled:opacity-60 disabled:cursor-not-allowed"
         (click)="onRegresar()"
+        [disabled]="loading || saving"
       >
         Cancelar
       </button>
@@ -110,10 +132,12 @@
                text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
                font-semibold rounded-full text-sm px-6 py-2.5
-               text-center leading-5 shadow transition active:scale-[0.98]"
+               text-center leading-5 shadow transition active:scale-[0.98]
+               disabled:opacity-60 disabled:cursor-not-allowed"
         (click)="onGuardar()"
+        [disabled]="loading || saving"
       >
-        Guardar cambios
+        {{ saving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Guardar tipo') }}
       </button>
     </div>
   </div>

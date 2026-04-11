@@ -1,16 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import {
+  GrupoInventario,
+  GruposInventarioService
+} from '../../../../services/grupos-inventario.service';
 
-interface GrupoInventario {
-  id: number;
-  nombre: string;
-}
-
-const LS_KEY = 'robledo_inventario_grupos';
+type EstadoFiltro = 'ACTIVOS' | 'INACTIVOS';
 
 @Component({
   selector: 'app-grupos',
@@ -20,16 +19,80 @@ const LS_KEY = 'robledo_inventario_grupos';
   styleUrl: './grupos.scss',
 })
 export class GruposComponent implements OnInit {
-  grupos: GrupoInventario[] = [];
+  private router = inject(Router);
+  private gruposInventarioService = inject(GruposInventarioService);
 
-  constructor(private router: Router) {}
+  grupos: GrupoInventario[] = [];
+  gruposPaginados: GrupoInventario[] = [];
+
+  loading = false;
+  errorMessage = '';
+
+  estadoFiltro: EstadoFiltro = 'ACTIVOS';
+
+  page = 1;
+  pageSize = 5;
+
+  Math = Math;
 
   ngOnInit(): void {
-    this.cargar();
-    if (this.grupos.length === 0) {
-      this.grupos = [{ id: 1, nombre: 'HERRAMIENTA' }];
-      this.guardar();
+    this.cargarGrupos();
+  }
+
+  cargarGrupos(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    const request$ =
+      this.estadoFiltro === 'ACTIVOS'
+        ? this.gruposInventarioService.getGruposActivos()
+        : this.gruposInventarioService.getGruposInactivos();
+
+    request$.subscribe({
+      next: (data) => {
+        this.grupos = (data ?? []).sort((a, b) => a.id - b.id);
+        this.page = 1;
+        this.refrescarPaginado();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar grupos de artículos:', error);
+        this.errorMessage = error?.error?.mensaje || 'No se pudieron cargar los grupos.';
+        this.grupos = [];
+        this.gruposPaginados = [];
+        this.page = 1;
+        this.loading = false;
+      }
+    });
+  }
+
+  refrescarPaginado(): void {
+    const start = (this.page - 1) * this.pageSize;
+    this.gruposPaginados = this.grupos.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.grupos.length / this.pageSize) || 1;
+  }
+
+  prevPage(): void {
+    if (this.page > 1) {
+      this.page--;
+      this.refrescarPaginado();
     }
+  }
+
+  nextPage(): void {
+    if (this.page < this.totalPages) {
+      this.page++;
+      this.refrescarPaginado();
+    }
+  }
+
+  onCambiarFiltro(estado: EstadoFiltro): void {
+    if (this.estadoFiltro === estado) return;
+    this.estadoFiltro = estado;
+    this.cargarGrupos();
   }
 
   onAgregarGrupo(): void {
@@ -41,23 +104,32 @@ export class GruposComponent implements OnInit {
   }
 
   onEliminar(grupo: GrupoInventario): void {
-    const ok = confirm(`¿Eliminar el grupo "${grupo.nombre}"?`);
-    if (!ok) return;
+    const confirmar = confirm(`¿Deseas inactivar el grupo "${grupo.nombre}"?`);
+    if (!confirmar) return;
 
-    this.grupos = this.grupos.filter(g => g.id !== grupo.id);
-    this.guardar();
+    this.gruposInventarioService.inactivarGrupo(grupo.id).subscribe({
+      next: () => {
+        this.cargarGrupos();
+      },
+      error: (error) => {
+        console.error('Error al inactivar grupo:', error);
+        alert(error?.error?.mensaje || 'No se pudo inactivar el grupo.');
+      }
+    });
   }
 
-  private cargar(): void {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      this.grupos = raw ? (JSON.parse(raw) as GrupoInventario[]) : [];
-    } catch {
-      this.grupos = [];
-    }
-  }
+  onReactivar(grupo: GrupoInventario): void {
+    const confirmar = confirm(`¿Deseas reactivar el grupo "${grupo.nombre}"?`);
+    if (!confirmar) return;
 
-  private guardar(): void {
-    localStorage.setItem(LS_KEY, JSON.stringify(this.grupos));
+    this.gruposInventarioService.reactivarGrupo(grupo.id).subscribe({
+      next: () => {
+        this.cargarGrupos();
+      },
+      error: (error) => {
+        console.error('Error al reactivar grupo:', error);
+        alert(error?.error?.mensaje || 'No se pudo reactivar el grupo.');
+      }
+    });
   }
 }

@@ -1,10 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+
+import { Vehiculo, VehiculosService } from '../../../../services/vehiculos.service';
+import {
+  CrearSolicitudMantenimientoRequest,
+  SolicitudesMantenimientoService
+} from '../../../../services/solicitudes-mantenimiento.service';
 
 type TipoServicio = 'Preventivo' | 'Correctivo';
 type PrioridadSolicitud = 'Baja' | 'Media' | 'Alta' | 'Crítica';
@@ -15,22 +21,21 @@ type PrioridadSolicitud = 'Baja' | 'Media' | 'Alta' | 'Crítica';
   imports: [CommonModule, FormsModule, RouterModule, CabeceraComponent, FooterComponent],
   templateUrl: './registro-solicitud-mantenimiento.html',
 })
-export class RegistroSolicitudMantenimientoComponent {
-  unidadesCatalogo: { id: number; nombre: string; placa?: string }[] = [
-    { id: 1, nombre: 'Unidad 01', placa: 'GTO-123-A' },
-    { id: 2, nombre: 'Unidad 02', placa: 'GTO-456-B' },
-    { id: 3, nombre: 'Unidad 03', placa: 'GTO-789-C' },
-  ];
+export class RegistroSolicitudMantenimientoComponent implements OnInit {
+  private router = inject(Router);
+  private vehiculosService = inject(VehiculosService);
+  private solicitudesService = inject(SolicitudesMantenimientoService);
 
-  // Referencia visual temporal.
-  // Más adelante también puede venir del backend.
-  folioReferencia = 'SM-0005';
+  unidadesCatalogo: Vehiculo[] = [];
 
-  unidadId: number | null = null;
-  tipoServicio: TipoServicio | '' = '';
-  prioridad: PrioridadSolicitud | '' = '';
-  kilometraje: number | null = null;
-  observaciones = '';
+  form = {
+    vehiculoId: null as number | null,
+    tipoServicio: '' as TipoServicio | '',
+    prioridad: '' as PrioridadSolicitud | '',
+    kilometraje: null as number | null,
+    observaciones: '',
+    solicitadoPorNombre: '',
+  };
 
   touched = {
     unidad: false,
@@ -39,7 +44,31 @@ export class RegistroSolicitudMantenimientoComponent {
     observaciones: false,
   };
 
-  constructor(private router: Router) {}
+  loadingVehiculos = false;
+  saving = false;
+  errorMessage = '';
+  successMessage = '';
+
+  ngOnInit(): void {
+    this.cargarVehiculos();
+  }
+
+  private cargarVehiculos(): void {
+    this.loadingVehiculos = true;
+    this.errorMessage = '';
+
+    this.vehiculosService.getVehiculosActivos().subscribe({
+      next: (data) => {
+        this.unidadesCatalogo = data ?? [];
+        this.loadingVehiculos = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar unidades:', error);
+        this.errorMessage = 'No se pudieron cargar las unidades.';
+        this.loadingVehiculos = false;
+      }
+    });
+  }
 
   private isValid(): boolean {
     this.touched.unidad = true;
@@ -47,10 +76,10 @@ export class RegistroSolicitudMantenimientoComponent {
     this.touched.prioridad = true;
     this.touched.observaciones = true;
 
-    const okUnidad = this.unidadId !== null;
-    const okTipo = !!this.tipoServicio;
-    const okPrioridad = !!this.prioridad;
-    const okObservaciones = this.observaciones.trim().length > 0;
+    const okUnidad = this.form.vehiculoId !== null;
+    const okTipo = !!this.form.tipoServicio;
+    const okPrioridad = !!this.form.prioridad;
+    const okObservaciones = this.form.observaciones.trim().length > 0;
 
     return okUnidad && okTipo && okPrioridad && okObservaciones;
   }
@@ -60,26 +89,39 @@ export class RegistroSolicitudMantenimientoComponent {
   }
 
   onGuardar(): void {
-    if (!this.isValid()) return;
+    this.errorMessage = '';
+    this.successMessage = '';
 
-    const payload = {
-      folio: this.folioReferencia,
-      unidadId: this.unidadId,
-      tipoServicio: this.tipoServicio,
-      prioridad: this.prioridad,
-      kilometraje: this.kilometraje,
-      observaciones: this.observaciones.trim(),
+    if (!this.isValid()) {
+      this.errorMessage = 'Revisa los campos obligatorios.';
+      return;
+    }
+
+    const payload: CrearSolicitudMantenimientoRequest = {
+      vehiculoId: this.form.vehiculoId as number,
+      tipoServicio: this.form.tipoServicio as TipoServicio,
+      prioridad: this.form.prioridad as PrioridadSolicitud,
+      kilometraje: this.form.kilometraje,
+      observaciones: this.form.observaciones.trim(),
+      solicitadoPorNombre: this.form.solicitadoPorNombre.trim() || null,
     };
 
-    console.log('Payload solicitud mantenimiento:', payload);
+    this.saving = true;
 
-    // Más adelante:
-    // El backend deberá asignar:
-    // - fechaSolicitud
-    // - solicitadoPor
-    // - estado = Pendiente
-    // - folio definitivo (si así se decide)
+    this.solicitudesService.crearSolicitud(payload).subscribe({
+      next: (response) => {
+        this.saving = false;
+        this.successMessage = response?.message
+          ? `${response.message} Folio: ${response.folio}.`
+          : 'Solicitud creada correctamente.';
 
-    this.router.navigate(['/mantenimientos/solicitudes']);
+        this.router.navigate(['/mantenimientos/solicitudes']);
+      },
+      error: (error) => {
+        console.error('Error al guardar solicitud:', error);
+        this.errorMessage = error?.error?.message || error?.error || 'No se pudo guardar la solicitud.';
+        this.saving = false;
+      }
+    });
   }
 }

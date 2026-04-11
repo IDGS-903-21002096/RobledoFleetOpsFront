@@ -4,7 +4,9 @@
   <div class="max-w-screen-xl mx-auto p-6">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Registro de proveedor</h1>
+        <h1 class="text-2xl font-bold text-gray-900">
+          {{ isEdit ? 'Editar proveedor' : 'Registro de proveedor' }}
+        </h1>
         <p class="text-gray-600">
           Captura la información del proveedor para compras, servicios y refacciones.
         </p>
@@ -14,11 +16,21 @@
         type="button"
         class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-               font-semibold rounded-full text-sm px-5 py-2.5 shadow transition active:scale-[0.98]"
+               font-semibold rounded-full text-sm px-5 py-2.5 shadow transition active:scale-[0.98]
+               disabled:opacity-60 disabled:cursor-not-allowed"
         (click)="onCancelar()"
+        [disabled]="loading || saving"
       >
         Regresar
       </button>
+    </div>
+
+    <div *ngIf="loading" class="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+      Cargando información del proveedor...
+    </div>
+
+    <div *ngIf="errorMessage" class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+      {{ errorMessage }}
     </div>
 
     <div class="rounded-2xl bg-white p-6 shadow-sm border border-gray-200">
@@ -51,6 +63,7 @@
                 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
                   !nombreComercialTouched
               }"
+              [disabled]="loading || saving"
               required
             />
 
@@ -88,6 +101,7 @@
                 'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500':
                   !tipoTouched
               }"
+              [disabled]="loading || saving"
               required
             >
               <option value="" disabled selected>Selecciona un tipo</option>
@@ -130,6 +144,7 @@
                 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
                   !telefonoTouched
               }"
+              [disabled]="loading || saving"
               required
             />
 
@@ -162,6 +177,7 @@
                 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-blue-500 focus:border-blue-500':
                   !emailTouched || !model.email
               }"
+              [disabled]="loading || saving"
             />
 
             <p *ngIf="emailTouched && model.email && isValidEmail(model.email)" class="mt-2.5 text-sm text-green-700">
@@ -191,6 +207,7 @@
                 class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none
                        bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400
                        focus:ring-blue-500 focus:border-blue-500"
+                [disabled]="loading || saving"
               />
             </div>
 
@@ -204,6 +221,7 @@
                 class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none
                        bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400
                        focus:ring-blue-500 focus:border-blue-500"
+                [disabled]="loading || saving"
               />
             </div>
 
@@ -217,6 +235,7 @@
                 class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none
                        bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400
                        focus:ring-blue-500 focus:border-blue-500"
+                [disabled]="loading || saving"
               />
             </div>
 
@@ -230,6 +249,7 @@
                 class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none
                        bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400
                        focus:ring-blue-500 focus:border-blue-500"
+                [disabled]="loading || saving"
               />
             </div>
 
@@ -243,6 +263,7 @@
                 class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none
                        bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400
                        focus:ring-blue-500 focus:border-blue-500"
+                [disabled]="loading || saving"
               />
             </div>
 
@@ -256,6 +277,7 @@
                 class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none
                        bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400
                        focus:ring-blue-500 focus:border-blue-500"
+                [disabled]="loading || saving"
               />
             </div>
           </div>
@@ -278,6 +300,7 @@
                 class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none
                        bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400
                        focus:ring-blue-500 focus:border-blue-500"
+                [disabled]="loading || saving"
               />
             </div>
 
@@ -291,6 +314,7 @@
                 class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none
                        bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400
                        focus:ring-blue-500 focus:border-blue-500"
+                [disabled]="loading || saving"
               />
             </div>
 
@@ -304,6 +328,7 @@
                 class="block w-full px-3 py-2.5 text-sm rounded-full shadow-sm focus:outline-none
                        bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400
                        focus:ring-blue-500 focus:border-blue-500"
+                [disabled]="loading || saving"
               />
             </div>
 
@@ -316,8 +341,10 @@
             type="button"
             class="inline-flex items-center justify-center rounded-full
                    bg-gray-200 hover:bg-gray-300 text-gray-800
-                   text-sm font-semibold px-6 py-2.5 shadow-sm"
+                   text-sm font-semibold px-6 py-2.5 shadow-sm
+                   disabled:opacity-60 disabled:cursor-not-allowed"
             (click)="onCancelar()"
+            [disabled]="loading || saving"
           >
             Cancelar
           </button>
@@ -327,10 +354,12 @@
             class="inline-flex items-center justify-center rounded-full
                    text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700
                    hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300
-                   text-sm font-semibold px-6 py-2.5 shadow transition active:scale-[0.98]"
+                   text-sm font-semibold px-6 py-2.5 shadow transition active:scale-[0.98]
+                   disabled:opacity-60 disabled:cursor-not-allowed"
             (click)="onGuardar()"
+            [disabled]="loading || saving"
           >
-            Guardar proveedor
+            {{ saving ? 'Guardando...' : (isEdit ? 'Guardar cambios' : 'Guardar proveedor') }}
           </button>
         </div>
       </form>
