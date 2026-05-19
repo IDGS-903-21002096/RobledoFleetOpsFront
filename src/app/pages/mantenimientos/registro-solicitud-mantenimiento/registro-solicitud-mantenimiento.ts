@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import { LayoutService } from '../../../../services/layout.service';
 
 import { Vehiculo, VehiculosService } from '../../../../services/vehiculos.service';
 import {
@@ -25,6 +26,9 @@ export class RegistroSolicitudMantenimientoComponent implements OnInit {
   private router = inject(Router);
   private vehiculosService = inject(VehiculosService);
   private solicitudesService = inject(SolicitudesMantenimientoService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   unidadesCatalogo: Vehiculo[] = [];
 
@@ -50,6 +54,12 @@ export class RegistroSolicitudMantenimientoComponent implements OnInit {
   successMessage = '';
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarVehiculos();
   }
 

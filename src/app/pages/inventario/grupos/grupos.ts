@@ -4,6 +4,8 @@ import { Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import { LayoutService } from '../../../../services/layout.service';
+
 import {
   GrupoInventario,
   GruposInventarioService
@@ -21,6 +23,9 @@ type EstadoFiltro = 'ACTIVOS' | 'INACTIVOS';
 export class GruposComponent implements OnInit {
   private router = inject(Router);
   private gruposInventarioService = inject(GruposInventarioService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   grupos: GrupoInventario[] = [];
   gruposPaginados: GrupoInventario[] = [];
@@ -36,6 +41,12 @@ export class GruposComponent implements OnInit {
   Math = Math;
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarGrupos();
   }
 

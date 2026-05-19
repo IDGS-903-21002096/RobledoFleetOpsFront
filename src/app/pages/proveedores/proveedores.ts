@@ -6,6 +6,7 @@ import { Router, RouterModule } from '@angular/router';
 import { CabeceraComponent } from '../../components/cabecera/cabecera';
 import { FooterComponent } from '../../components/footer/footer';
 import { Proveedor, ProveedoresService } from '../../../services/proveedores.service';
+import { LayoutService } from '../../../services/layout.service';
 
 type TipoProveedor = 'Refacciones' | 'Servicios' | 'Ambos';
 
@@ -38,6 +39,9 @@ type EstadoFiltro = 'ACTIVOS' | 'INACTIVOS';
 export class ProveedoresComponent implements OnInit {
   private router = inject(Router);
   private proveedoresService = inject(ProveedoresService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   search = '';
   page = 1;
@@ -54,6 +58,12 @@ export class ProveedoresComponent implements OnInit {
   proveedores: ProveedorCard[] = [];
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarProveedores();
   }
 

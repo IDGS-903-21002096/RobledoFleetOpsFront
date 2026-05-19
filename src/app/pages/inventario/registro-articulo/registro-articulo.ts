@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import { LayoutService } from '../../../../services/layout.service';
 
 import {
   ArticulosInventarioService,
@@ -44,6 +45,9 @@ export class RegistroArticuloComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private articulosService = inject(ArticulosInventarioService);
   private gruposService = inject(GruposInventarioService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   editId: number | null = null;
   modo: ModoRegistro = 'individual';
@@ -63,6 +67,12 @@ export class RegistroArticuloComponent implements OnInit {
   saving = false;
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarGrupos();
 
     const idParam = this.route.snapshot.paramMap.get('id');

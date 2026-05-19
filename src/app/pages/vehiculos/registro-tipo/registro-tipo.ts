@@ -10,6 +10,7 @@ import {
   TipoVehiculo,
   TiposVehiculoService
 } from '../../../../services/tipos-vehiculo.service';
+import { LayoutService } from '../../../../services/layout.service';
 
 interface TipoForm {
   id: number | null;
@@ -29,6 +30,9 @@ export class RegistroTipoComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private tiposVehiculoService = inject(TiposVehiculoService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   isEditMode: boolean = false;
   submitted: boolean = false;
@@ -45,6 +49,12 @@ export class RegistroTipoComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     const idParam = this.route.snapshot.paramMap.get('id');
 
     if (idParam) {

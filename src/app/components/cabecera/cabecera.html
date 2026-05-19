@@ -1,253 +1,532 @@
-<nav class="bg-[#0B3A78] fixed w-full z-20 top-0 start-0 border-b border-white/10 shadow-md">
-  <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-    <a routerLink="/inicio" class="flex items-center space-x-3 rtl:space-x-reverse">
-      <div class="bg-white rounded-full p-2 shadow-sm">
-        <img src="img/robledoco.png" class="h-7 w-7 object-contain" alt="Robledo & Co" />
+<button
+  type="button"
+  class="fixed top-4 left-4 z-50 inline-flex items-center justify-center rounded-xl bg-[#0B3A78] p-3 text-white shadow-lg md:hidden"
+  (click)="toggleMobileMenu()"
+  aria-label="Abrir menú"
+>
+  <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16" />
+  </svg>
+</button>
+
+<div
+  class="fixed inset-0 z-40 bg-slate-900/50 md:hidden"
+  *ngIf="mobileMenuOpen"
+  (click)="closeMobileMenu()"
+></div>
+
+<aside
+  class="fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-[#0F4C97] bg-[#0B3A78] text-white shadow-xl transition-all duration-300"
+  [class.w-72]="!sidebarCollapsed"
+  [class.w-20]="sidebarCollapsed"
+  [class.-translate-x-full]="!mobileMenuOpen"
+  [class.translate-x-0]="mobileMenuOpen"
+  [class.md:translate-x-0]="true"
+>
+  <!-- Header -->
+  <div
+    class="flex items-center border-b border-white/10 px-4 py-4"
+    [class.justify-between]="!sidebarCollapsed"
+    [class.justify-center]="sidebarCollapsed"
+  >
+    <a
+      routerLink="/inicio"
+      class="flex min-w-0 items-center gap-3"
+      (click)="onNavigate()"
+      [class.justify-center]="sidebarCollapsed"
+    >
+      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-md">
+        <img src="img/robledoco.png" class="h-8 w-8 object-contain" alt="Robledo & Co" />
       </div>
 
-      <span class="self-center text-xl text-white font-semibold whitespace-nowrap">
-        Robledo FleetOps
-      </span>
+      <div *ngIf="!sidebarCollapsed" class="min-w-0">
+        <p class="truncate text-lg font-bold text-white">Robledo FleetOps</p>
+        <p class="text-xs font-medium uppercase tracking-[0.2em] text-blue-200">Sistema operativo</p>
+      </div>
     </a>
 
-    <div class="flex items-center md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-      <button type="button"
-        class="flex text-sm bg-white/10 hover:bg-white/20 transition rounded-full md:me-0 focus:ring-4 focus:ring-white/30"
-        [attr.aria-expanded]="userMenuOpen" (click)="$event.stopPropagation(); toggleUserMenu()">
-        <span class="sr-only">Open user menu</span>
+    <button
+      *ngIf="!sidebarCollapsed"
+      type="button"
+      class="rounded-lg p-2 text-blue-100 transition hover:bg-white/10 md:hidden"
+      (click)="closeMobileMenu()"
+      aria-label="Cerrar menú"
+    >
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M6 6l12 12M18 6l-12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Navegación -->
+  <div class="flex-1 overflow-y-auto px-3 py-4">
+    <nav class="space-y-2">
+      <!-- Inicio -->
+      <a
+        routerLink="/inicio"
+        [routerLinkActiveOptions]="{ exact: true }"
+        routerLinkActive="bg-white !text-[#0B3A78] shadow-md"
+        class="group flex items-center rounded-2xl px-4 py-3 text-sm font-semibold text-blue-50 transition hover:bg-white/10"
+        [class.justify-center]="sidebarCollapsed"
+        (click)="onNavigate()"
+        [attr.title]="sidebarCollapsed ? 'Inicio' : null"
+      >
+        <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5.5v-6h-5v6H4a1 1 0 01-1-1v-9.5z" />
+        </svg>
+        <span *ngIf="!sidebarCollapsed" class="ml-3">Inicio</span>
+      </a>
+
+      <!-- Vehículos -->
+      <div class="rounded-2xl" [class.bg-white/10]="vehiculosOpen && !sidebarCollapsed">
+        <button
+          type="button"
+          class="flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-semibold text-blue-50 transition hover:bg-white/10"
+          [class.justify-center]="sidebarCollapsed"
+          [class.bg-white/10]="isRouteActive('/vehiculos') && !vehiculosOpen"
+          (click)="toggleSection('vehiculos')"
+          (mouseenter)="openCollapsedHover('vehiculos', $event)"
+          (mouseleave)="scheduleCollapsedHoverClose()"
+          [attr.title]="sidebarCollapsed ? 'Vehículos' : null"
+        >
+          <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 16l1.5-4.5A2 2 0 016.4 10H17.6a2 2 0 011.9 1.5L21 16M5 16h14M7 19h.01M17 19h.01M6 16v3m12-3v3" />
+          </svg>
+
+          <ng-container *ngIf="!sidebarCollapsed">
+            <span class="ml-3 flex-1">Vehículos</span>
+            <svg class="h-4 w-4 transition-transform" [class.rotate-180]="vehiculosOpen" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                clip-rule="evenodd" />
+            </svg>
+          </ng-container>
+        </button>
+
+        <div *ngIf="vehiculosOpen && !sidebarCollapsed" class="space-y-1 px-3 pb-3">
+          <a
+            routerLink="/vehiculos"
+            routerLinkActive="bg-white text-[#0B3A78]"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+            (click)="onNavigate()"
+          >
+            Consultar
+          </a>
+
+          <a
+            routerLink="/vehiculos/tipos"
+            routerLinkActive="bg-white text-[#0B3A78]"
+            class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+            (click)="onNavigate()"
+          >
+            Tipos de vehículo
+          </a>
+        </div>
+      </div>
+
+      <!-- Inventario -->
+      <div class="rounded-2xl" [class.bg-white/10]="inventarioOpen && !sidebarCollapsed">
+        <button
+          type="button"
+          class="flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-semibold text-blue-50 transition hover:bg-white/10"
+          [class.justify-center]="sidebarCollapsed"
+          [class.bg-white/10]="isRouteActive('/inventario') && !inventarioOpen"
+          (click)="toggleSection('inventario')"
+          (mouseenter)="openCollapsedHover('inventario', $event)"
+          (mouseleave)="scheduleCollapsedHoverClose()"
+          [attr.title]="sidebarCollapsed ? 'Inventario' : null"
+        >
+          <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 7.5L12 3l8 4.5M4 7.5V16.5L12 21m-8-13.5L12 12m8-4.5V16.5L12 21m0-9V21" />
+          </svg>
+
+          <ng-container *ngIf="!sidebarCollapsed">
+            <span class="ml-3 flex-1">Inventario</span>
+            <svg class="h-4 w-4 transition-transform" [class.rotate-180]="inventarioOpen" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                clip-rule="evenodd" />
+            </svg>
+          </ng-container>
+        </button>
+
+        <div *ngIf="inventarioOpen && !sidebarCollapsed" class="space-y-1 px-3 pb-3">
+          <a routerLink="/inventario" routerLinkActive="bg-white text-[#0B3A78]" [routerLinkActiveOptions]="{ exact: true }"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Consultar</a>
+
+          <a routerLink="/inventario/grupos" routerLinkActive="bg-white text-[#0B3A78]"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Grupos de artículos</a>
+
+          <a routerLink="/inventario/entradas" routerLinkActive="bg-white text-[#0B3A78]"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Entradas</a>
+
+          <a routerLink="/inventario/salidas" routerLinkActive="bg-white text-[#0B3A78]"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Salidas</a>
+
+          <a routerLink="/inventario/historial-movimientos" routerLinkActive="bg-white text-[#0B3A78]"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Historial de movimientos</a>
+        </div>
+      </div>
+
+      <!-- Mantenimientos -->
+      <div class="rounded-2xl" [class.bg-white/10]="mantenimientosOpen && !sidebarCollapsed">
+        <button
+          type="button"
+          class="flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-semibold text-blue-50 transition hover:bg-white/10"
+          [class.justify-center]="sidebarCollapsed"
+          [class.bg-white/10]="isRouteActive('/mantenimientos') && !mantenimientosOpen"
+          (click)="toggleSection('mantenimientos')"
+          (mouseenter)="openCollapsedHover('mantenimientos', $event)"
+          (mouseleave)="scheduleCollapsedHoverClose()"
+          [attr.title]="sidebarCollapsed ? 'Mantenimientos' : null"
+        >
+          <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M14.7 6.3l3 3M7 17l3.6-.6L18 9l-3-3-7.4 7.4L7 17zM5 19h14" />
+          </svg>
+
+          <ng-container *ngIf="!sidebarCollapsed">
+            <span class="ml-3 flex-1">Mantenimientos</span>
+            <svg class="h-4 w-4 transition-transform" [class.rotate-180]="mantenimientosOpen" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                clip-rule="evenodd" />
+            </svg>
+          </ng-container>
+        </button>
+
+        <div *ngIf="mantenimientosOpen && !sidebarCollapsed" class="space-y-1 px-3 pb-3">
+          <a routerLink="/mantenimientos" routerLinkActive="bg-white text-[#0B3A78]" [routerLinkActiveOptions]="{ exact: true }"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Consultar</a>
+
+          <a routerLink="/mantenimientos/solicitudes/nueva" routerLinkActive="bg-white text-[#0B3A78]"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Solicitar mantenimiento</a>
+
+          <a routerLink="/mantenimientos/registro" routerLinkActive="bg-white text-[#0B3A78]"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Registrar mantenimiento</a>
+
+          <a routerLink="/mantenimientos/solicitudes" routerLinkActive="bg-white text-[#0B3A78]"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Solicitudes de mantenimiento</a>
+
+          <a routerLink="/mantenimientos/recordatorios" routerLinkActive="bg-white text-[#0B3A78]"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Recordatorios</a>
+        </div>
+      </div>
+
+      <!-- Proveedores -->
+      <a
+        routerLink="/proveedores"
+        routerLinkActive="bg-white !text-[#0B3A78] shadow-md"
+        class="group flex items-center rounded-2xl px-4 py-3 text-sm font-semibold text-blue-50 transition hover:bg-white/10"
+        [class.justify-center]="sidebarCollapsed"
+        (click)="onNavigate()"
+        [attr.title]="sidebarCollapsed ? 'Proveedores' : null"
+      >
+        <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 21h18M5 21V7l7-4 7 4v14M9 10h.01M15 10h.01M9 14h.01M15 14h.01" />
+        </svg>
+        <span *ngIf="!sidebarCollapsed" class="ml-3">Proveedores</span>
+      </a>
+
+      <!-- Usuarios -->
+      <div class="rounded-2xl" [class.bg-white/10]="usuariosOpen && !sidebarCollapsed">
+        <button
+          type="button"
+          class="flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-semibold text-blue-50 transition hover:bg-white/10"
+          [class.justify-center]="sidebarCollapsed"
+          [class.bg-white/10]="isRouteActive('/usuarios') && !usuariosOpen"
+          (click)="toggleSection('usuarios')"
+          (mouseenter)="openCollapsedHover('usuarios', $event)"
+          (mouseleave)="scheduleCollapsedHoverClose()"
+          [attr.title]="sidebarCollapsed ? 'Usuarios' : null"
+        >
+          <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M16 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2M9.5 11a4 4 0 100-8 4 4 0 000 8zm8 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+          </svg>
+
+          <ng-container *ngIf="!sidebarCollapsed">
+            <span class="ml-3 flex-1">Usuarios</span>
+            <svg class="h-4 w-4 transition-transform" [class.rotate-180]="usuariosOpen" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                clip-rule="evenodd" />
+            </svg>
+          </ng-container>
+        </button>
+
+        <div *ngIf="usuariosOpen && !sidebarCollapsed" class="space-y-1 px-3 pb-3">
+          <a routerLink="/usuarios" routerLinkActive="bg-white text-[#0B3A78]" [routerLinkActiveOptions]="{ exact: true }"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Consultar</a>
+
+          <a routerLink="/usuarios/roles" routerLinkActive="bg-white text-[#0B3A78]"
+             class="block rounded-xl px-4 py-2.5 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white"
+             (click)="onNavigate()">Roles y facultades</a>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Footer usuario -->
+  <div class="border-t border-white/10 p-3">
+    <div class="relative" (click)="$event.stopPropagation()">
+      <button
+        type="button"
+        class="flex w-full items-center rounded-2xl px-3 py-3 transition hover:bg-white/10"
+        [class.justify-center]="sidebarCollapsed"
+        [class.px-2]="sidebarCollapsed"
+        (click)="toggleUserMenu($event)"
+        [attr.title]="sidebarCollapsed ? nombreUsuario : null"
+      >
         <img
-          class="w-8 h-8 rounded-full border border-white/30 object-cover"
+          class="h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 rounded-full border border-white/20 object-cover"
           [src]="avatarUsuario"
           [alt]="nombreUsuario"
           (error)="onAvatarError($event)"
         />
+
+        <div *ngIf="!sidebarCollapsed" class="ml-3 min-w-0 flex-1 text-left">
+          <p class="truncate text-sm font-semibold text-white">{{ nombreUsuario }}</p>
+          <p class="truncate text-xs text-blue-200">{{ emailUsuario }}</p>
+        </div>
+
+        <svg *ngIf="!sidebarCollapsed" class="h-5 w-5 text-blue-200" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+            clip-rule="evenodd" />
+        </svg>
       </button>
 
       <div
-        class="z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-56 absolute right-4 top-[68px] md:top-[72px]"
-        [class.hidden]="!userMenuOpen" (click)="$event.stopPropagation()">
-        <div class="px-4 py-3 text-sm border-b border-gray-200">
-          <span class="block text-gray-900 font-medium">{{ nombreUsuario }}</span>
-          <span class="block text-gray-500 truncate">{{ emailUsuario }}</span>
-        </div>
+        *ngIf="userMenuOpen && !sidebarCollapsed"
+        class="absolute bottom-[78px] left-0 right-0 rounded-2xl border border-blue-200 bg-white p-2 shadow-2xl"
+      >
+        <a
+          routerLink="/usuarios"
+          class="block rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+          (click)="onNavigate()"
+        >
+          Usuarios
+        </a>
 
-        <ul class="p-2 text-sm text-gray-700 font-medium">
-          <li>
-            <a routerLink="/usuarios" class="inline-flex items-center w-full p-2 hover:bg-gray-100 rounded-lg"
-              (click)="closeUserMenu()">
-              Usuarios
-            </a>
-          </li>
-
-          <li class="border-t border-gray-200 mt-2 pt-2">
-            <button
-              type="button"
-              class="inline-flex items-center w-full p-2 hover:bg-gray-100 rounded-lg text-red-600"
-              (click)="onLogout()">
-              Cerrar sesión
-            </button>
-          </li>
-        </ul>
+        <button
+          type="button"
+          class="mt-1 block w-full rounded-xl px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+          (click)="onLogout()"
+        >
+          Cerrar sesión
+        </button>
       </div>
+    </div>
 
-      <button type="button"
-        class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-white rounded-lg md:hidden hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
-        aria-controls="navbar-user" [attr.aria-expanded]="mobileMenuOpen" (click)="toggleMobileMenu()">
-        <span class="sr-only">Open main menu</span>
-        <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
-          viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M5 7h14M5 12h14M5 17h14" />
+    <!-- Botón minimizar / expandir -->
+    <div class="mt-3 flex" [class.justify-end]="!sidebarCollapsed" [class.justify-center]="sidebarCollapsed">
+      <button
+        type="button"
+        class="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/5 text-blue-100 transition hover:bg-white/10"
+        (click)="toggleSidebar()"
+        [attr.title]="sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'"
+      >
+        <svg *ngIf="!sidebarCollapsed" class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M15 19l-7-7 7-7" />
+        </svg>
+
+        <svg *ngIf="sidebarCollapsed" class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 5l7 7-7 7" />
         </svg>
       </button>
     </div>
-
-    <div id="navbar-user" class="items-center justify-between w-full md:flex md:w-auto md:order-1"
-      [class.hidden]="!mobileMenuOpen">
-      <ul
-        class="font-medium flex flex-col p-4 md:p-0 mt-4 rounded-xl bg-white/10 border border-white/10 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-transparent">
-        <li>
-          <a routerLink="/inicio" routerLinkActive="md:text-white md:underline md:underline-offset-8"
-            [routerLinkActiveOptions]="{ exact: true }"
-            class="block py-2 px-3 text-white rounded md:p-0 hover:text-blue-200 transition"
-            (click)="closeMobileMenu()">
-            Inicio
-          </a>
-        </li>
-
-        <li class="relative">
-          <div class="hidden md:block relative group">
-            <button type="button"
-              class="inline-flex items-center gap-2 py-2 px-3 md:p-0 text-white/90 hover:text-blue-200 transition font-medium">
-              Vehículos
-              <svg class="w-4 h-4 opacity-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-                  clip-rule="evenodd" />
-              </svg>
-            </button>
-
-            <div
-              class="absolute left-0 top-full pt-2 z-50 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 transition duration-150">
-              <div class="w-56 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-                <a routerLink="/vehiculos" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Consultar
-                </a>
-
-                <a routerLink="/vehiculos/tipos"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Tipos de vehículo
-                </a>
-              </div>
-            </div>
-          </div>
-          <a routerLink="/vehiculos" routerLinkActive="md:text-white md:underline md:underline-offset-8"
-            class="md:hidden block py-2 px-3 text-white/90 rounded hover:text-blue-200 transition"
-            (click)="closeMobileMenu()">
-            Vehículos
-          </a>
-        </li>
-
-        <li class="relative">
-          <div class="hidden md:block relative group">
-            <button type="button"
-              class="inline-flex items-center gap-2 py-2 px-3 md:p-0 text-white/90 hover:text-blue-200 transition font-medium">
-              Inventario
-              <svg class="w-4 h-4 opacity-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-                  clip-rule="evenodd" />
-              </svg>
-            </button>
-
-            <div
-              class="absolute left-0 top-full pt-2 z-50 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 transition duration-150">
-              <div class="w-64 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-                <a routerLink="/inventario" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Consultar
-                </a>
-
-                <a routerLink="/inventario/grupos"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Grupos de artículos
-                </a>
-
-                <a routerLink="/inventario/entradas"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Entradas
-                </a>
-
-                <a routerLink="/inventario/salidas"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Salidas
-                </a>
-
-                <a routerLink="/inventario/historial-movimientos"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Historial de movimientos
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <a routerLink="/inventario" routerLinkActive="md:text-white md:underline md:underline-offset-8"
-            class="md:hidden block py-2 px-3 text-white/90 rounded hover:text-blue-200 transition"
-            (click)="closeMobileMenu()">
-            Inventario
-          </a>
-        </li>
-
-        <li class="relative">
-          <div class="hidden md:block relative group">
-            <button type="button"
-              class="inline-flex items-center gap-2 py-2 px-3 md:p-0 text-white/90 hover:text-blue-200 transition font-medium">
-              Mantenimientos
-              <svg class="w-4 h-4 opacity-90" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-                  clip-rule="evenodd" />
-              </svg>
-            </button>
-
-            <div
-              class="absolute left-0 top-full pt-2 z-50 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 transition duration-150">
-              <div class="w-64 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-                <a routerLink="/mantenimientos"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Consultar
-                </a>
-
-                <a routerLink="/mantenimientos/solicitudes/nueva"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Solicitar mantenimiento
-                </a>
-
-                <a routerLink="/mantenimientos/registro"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Registrar mantenimiento
-                </a>
-
-                <a routerLink="/mantenimientos/solicitudes"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Solicitudes de mantenimiento
-                </a>
-
-                <a routerLink="/mantenimientos/recordatorios"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Recordatorios
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <a routerLink="/mantenimientos" routerLinkActive="md:text-white md:underline md:underline-offset-8"
-            class="md:hidden block py-2 px-3 text-white/90 rounded hover:text-blue-200 transition"
-            (click)="closeMobileMenu()">
-            Mantenimientos
-          </a>
-        </li>
-
-        <li>
-          <a routerLink="/proveedores" routerLinkActive="md:text-white md:underline md:underline-offset-8"
-            class="block py-2 px-3 text-white/90 rounded hover:text-blue-200 transition md:p-0"
-            (click)="closeMobileMenu()">
-            Proveedores
-          </a>
-        </li>
-
-        <li class="relative">
-          <div class="hidden md:block relative group">
-            <button type="button"
-              class="inline-flex items-center gap-2 py-2 px-3 md:p-0 text-white/90 hover:text-blue-200 transition font-medium">
-              Usuarios
-              <svg class="w-4 h-4 opacity-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-                  clip-rule="evenodd" />
-              </svg>
-            </button>
-
-            <div
-              class="absolute left-0 top-full pt-2 z-50 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 transition duration-150">
-              <div class="w-56 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-                <a routerLink="/usuarios" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Consultar
-                </a>
-
-                <a routerLink="/usuarios/roles"
-                  class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
-                  Roles y facultades
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <a routerLink="/usuarios" routerLinkActive="md:text-white md:underline md:underline-offset-8"
-            class="md:hidden block py-2 px-3 text-white/90 rounded hover:text-blue-200 transition"
-            (click)="closeMobileMenu()">
-            Usuarios
-          </a>
-        </li>
-      </ul>
-    </div>
   </div>
-</nav>
+</aside>
+
+<!-- Flyout flotante: Vehículos -->
+<div
+  *ngIf="sidebarCollapsed && hoveredCollapsedSection === 'vehiculos'"
+  class="fixed z-[80] rounded-2xl border border-slate-200 bg-white p-2 text-slate-800 shadow-2xl transition-all duration-200 ease-out"
+  [ngStyle]="collapsedPanelStyle"
+  (mouseenter)="cancelCollapsedHoverClose()"
+  (mouseleave)="scheduleCollapsedHoverClose()"
+>
+  <div class="px-3 py-2 text-sm font-semibold text-slate-900">Vehículos</div>
+
+  <a
+    routerLink="/vehiculos"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    [routerLinkActiveOptions]="{ exact: true }"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Consultar
+  </a>
+
+  <a
+    routerLink="/vehiculos/tipos"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Tipos de vehículo
+  </a>
+</div>
+
+<!-- Flyout flotante: Inventario -->
+<div
+  *ngIf="sidebarCollapsed && hoveredCollapsedSection === 'inventario'"
+  class="fixed z-[80] rounded-2xl border border-slate-200 bg-white p-2 text-slate-800 shadow-2xl transition-all duration-200 ease-out"
+  [ngStyle]="collapsedPanelStyle"
+  (mouseenter)="cancelCollapsedHoverClose()"
+  (mouseleave)="scheduleCollapsedHoverClose()"
+>
+  <div class="px-3 py-2 text-sm font-semibold text-slate-900">Inventario</div>
+
+  <a
+    routerLink="/inventario"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    [routerLinkActiveOptions]="{ exact: true }"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Consultar
+  </a>
+
+  <a
+    routerLink="/inventario/grupos"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Grupos de artículos
+  </a>
+
+  <a
+    routerLink="/inventario/entradas"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Entradas
+  </a>
+
+  <a
+    routerLink="/inventario/salidas"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Salidas
+  </a>
+
+  <a
+    routerLink="/inventario/historial-movimientos"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Historial de movimientos
+  </a>
+</div>
+
+<!-- Flyout flotante: Mantenimientos -->
+<div
+  *ngIf="sidebarCollapsed && hoveredCollapsedSection === 'mantenimientos'"
+  class="fixed z-[80] rounded-2xl border border-slate-200 bg-white p-2 text-slate-800 shadow-2xl transition-all duration-200 ease-out"
+  [ngStyle]="collapsedPanelStyle"
+  (mouseenter)="cancelCollapsedHoverClose()"
+  (mouseleave)="scheduleCollapsedHoverClose()"
+>
+  <div class="px-3 py-2 text-sm font-semibold text-slate-900">Mantenimientos</div>
+
+  <a
+    routerLink="/mantenimientos"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    [routerLinkActiveOptions]="{ exact: true }"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Consultar
+  </a>
+
+  <a
+    routerLink="/mantenimientos/solicitudes/nueva"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Solicitar mantenimiento
+  </a>
+
+  <a
+    routerLink="/mantenimientos/registro"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Registrar mantenimiento
+  </a>
+
+  <a
+    routerLink="/mantenimientos/solicitudes"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Solicitudes de mantenimiento
+  </a>
+
+  <a
+    routerLink="/mantenimientos/recordatorios"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Recordatorios
+  </a>
+</div>
+
+<!-- Flyout flotante: Usuarios -->
+<div
+  *ngIf="sidebarCollapsed && hoveredCollapsedSection === 'usuarios'"
+  class="fixed z-[80] rounded-2xl border border-slate-200 bg-white p-2 text-slate-800 shadow-2xl transition-all duration-200 ease-out"
+  [ngStyle]="collapsedPanelStyle"
+  (mouseenter)="cancelCollapsedHoverClose()"
+  (mouseleave)="scheduleCollapsedHoverClose()"
+>
+  <div class="px-3 py-2 text-sm font-semibold text-slate-900">Usuarios</div>
+
+  <a
+    routerLink="/usuarios"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    [routerLinkActiveOptions]="{ exact: true }"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Consultar
+  </a>
+
+  <a
+    routerLink="/usuarios/roles"
+    routerLinkActive="bg-slate-100 text-[#0B3A78]"
+    class="block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    (click)="onNavigate()"
+  >
+    Roles y facultades
+  </a>
+</div>

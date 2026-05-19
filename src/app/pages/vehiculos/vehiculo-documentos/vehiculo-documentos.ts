@@ -8,6 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
 import { Vehiculo, VehiculosService } from '../../../../services/vehiculos.service';
+import { LayoutService } from '../../../../services/layout.service';
 import { environment } from '../../../../environments/environment';
 
 type EstadoDoc = 'PENDIENTE' | 'SUBIENDO' | 'CARGADO';
@@ -92,8 +93,11 @@ export class VehiculoDocumentosComponent implements OnInit {
   private sanitizer = inject(DomSanitizer);
   private http = inject(HttpClient);
   private vehiculosService = inject(VehiculosService);
+  private layoutService = inject(LayoutService);
 
   private apiUrl = `${environment.apiUrl}/VehiculosDocumentos`;
+
+  sidebarCollapsed = false;
 
   vehiculoId: number | null = null;
   vehiculo: Vehiculo | null = null;
@@ -124,6 +128,12 @@ export class VehiculoDocumentosComponent implements OnInit {
   documentoEditandoId: number | null = null;
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     const idParam = this.route.snapshot.paramMap.get('id');
     const parsed = idParam ? Number(idParam) : null;
     this.vehiculoId = parsed && !Number.isNaN(parsed) ? parsed : null;

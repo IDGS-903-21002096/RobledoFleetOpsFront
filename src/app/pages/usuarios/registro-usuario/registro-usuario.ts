@@ -12,6 +12,7 @@ import {
   EditarUsuarioRequest,
   Usuario
 } from '../../../../services/usuarios.service';
+import { LayoutService } from '../../../../services/layout.service';
 
 type AvatarOption = {
   key: string;
@@ -39,6 +40,9 @@ export class RegistroUsuarioComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private rolesService = inject(RolesService);
   private usuariosService = inject(UsuariosService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   isEditMode = false;
   loading = false;
@@ -70,6 +74,12 @@ export class RegistroUsuarioComponent implements OnInit {
   passwordTouched = false;
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     const idParam = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!idParam;
 
@@ -168,12 +178,12 @@ export class RegistroUsuarioComponent implements OnInit {
   }
 
   isPasswordSectionValid(): boolean {
-  if (this.isEditMode) {
-    if (!this.model.password?.trim()) return true;
-    return this.isValidPassword(this.model.password);
-  }
+    if (this.isEditMode) {
+      if (!this.model.password?.trim()) return true;
+      return this.isValidPassword(this.model.password);
+    }
 
-  return this.isValidPassword(this.model.password);
+    return this.isValidPassword(this.model.password);
   }
 
   onCancelar(): void {

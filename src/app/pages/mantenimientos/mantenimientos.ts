@@ -10,6 +10,7 @@ import {
   MantenimientoDetalle,
   MantenimientosService
 } from '../../../services/mantenimientos.service';
+import { LayoutService } from '../../../services/layout.service';
 
 type TipoServicio = 'Preventivo' | 'Correctivo';
 type EstatusMantenimiento = 'Programado' | 'En proceso' | 'Finalizado' | 'Cancelado';
@@ -37,6 +38,9 @@ type MantenimientoRow = {
 export class MantenimientosComponent implements OnInit {
   private router = inject(Router);
   private mantenimientosService = inject(MantenimientosService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   search = '';
   page = 1;
@@ -50,6 +54,12 @@ export class MantenimientosComponent implements OnInit {
   processingStatusId: number | null = null;
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarMantenimientos();
   }
 

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import { LayoutService } from '../../../../services/layout.service';
 
 import {
   HistorialMovimientosResumen,
@@ -20,6 +21,9 @@ import {
 })
 export class HistorialMovimientosComponent implements OnInit {
   private historialService = inject(HistorialMovimientosService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   busqueda = '';
   filtroTipo = '';
@@ -50,6 +54,12 @@ export class HistorialMovimientosComponent implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarMovimientos();
   }
 

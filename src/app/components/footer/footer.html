@@ -1,11 +1,25 @@
-<footer class="bg-[#0B3A78] border-t border-white/10 shadow-md">
-  <div class="w-full mx-auto max-w-screen-xl p-4 flex justify-center">
-    <span class="text-sm text-white/90 text-center">
-      © {{ year }}
-      <span class="font-medium text-white">
-        Robledo FleetOps
-      </span>.
-      Todos los derechos reservados.
-    </span>
+<footer
+  class="border-t border-white/10 bg-[#0B3A78] transition-all duration-300"
+  [class.md:pl-72]="!sidebarCollapsed"
+  [class.md:pl-20]="sidebarCollapsed"
+>
+  <div class="w-full px-4 sm:px-6 lg:px-8">
+    <div
+      class="flex flex-col items-center justify-between gap-2 py-4 text-center sm:flex-row"
+    >
+      <div class="flex items-center gap-2 text-sm text-white/90">
+        <span class="font-semibold text-white">
+          Robledo FleetOps
+        </span>
+
+        <span class="text-white/40">•</span>
+
+        <span>Versión 1.2</span>
+      </div>
+
+      <span class="text-xs text-white/70">
+        © {{ year }} Transportes Robledo & Co.
+      </span>
+    </div>
   </div>
 </footer>

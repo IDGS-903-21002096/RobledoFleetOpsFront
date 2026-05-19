@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
 import { TipoVehiculo, TiposVehiculoService } from '../../../../services/tipos-vehiculo.service';
+import { LayoutService } from '../../../../services/layout.service';
 
 @Component({
   selector: 'app-tipos',
@@ -17,6 +18,9 @@ import { TipoVehiculo, TiposVehiculoService } from '../../../../services/tipos-v
 export class TiposComponent implements OnInit {
   private router = inject(Router);
   private tiposVehiculoService = inject(TiposVehiculoService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   search: string = '';
   loading: boolean = false;
@@ -28,6 +32,12 @@ export class TiposComponent implements OnInit {
   tipos: TipoVehiculo[] = [];
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarTipos();
   }
 

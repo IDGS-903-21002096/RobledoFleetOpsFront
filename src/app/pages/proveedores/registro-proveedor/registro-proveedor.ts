@@ -11,6 +11,7 @@ import {
   Proveedor,
   ProveedoresService
 } from '../../../../services/proveedores.service';
+import { LayoutService } from '../../../../services/layout.service';
 
 type TipoProveedor = 'Refacciones' | 'Servicios' | 'Ambos';
 
@@ -43,6 +44,9 @@ export class RegistroProveedorComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private proveedoresService = inject(ProveedoresService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   tiposProveedor: TipoProveedor[] = ['Refacciones', 'Servicios', 'Ambos'];
 
@@ -61,6 +65,12 @@ export class RegistroProveedorComponent implements OnInit {
   tipoTouched = false;
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     const idParam = this.route.snapshot.paramMap.get('id');
     this.proveedorId = idParam ? Number(idParam) : null;
 

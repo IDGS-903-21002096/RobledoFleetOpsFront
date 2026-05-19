@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import { LayoutService } from '../../../../services/layout.service';
 
 import { Vehiculo, VehiculosService } from '../../../../services/vehiculos.service';
 import {
@@ -55,6 +56,9 @@ export class RegistroMantenimientoComponent implements OnInit {
   private articulosService = inject(ArticulosInventarioService);
   private solicitudesService = inject(SolicitudesMantenimientoService);
   private mantenimientosService = inject(MantenimientosService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   editId: number | null = null;
 
@@ -116,6 +120,12 @@ export class RegistroMantenimientoComponent implements OnInit {
   successMessage = '';
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarCatalogos();
 
     const idParam = this.route.snapshot.paramMap.get('id');

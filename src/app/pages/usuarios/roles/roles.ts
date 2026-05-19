@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
 import { RolesService, Rol } from '../../../../services/roles.service';
+import { LayoutService } from '../../../../services/layout.service';
 
 type EstadoFiltro = 'TODOS' | 'ACTIVO' | 'INACTIVO';
 
@@ -19,6 +20,9 @@ type EstadoFiltro = 'TODOS' | 'ACTIVO' | 'INACTIVO';
 export class RolesComponent implements OnInit {
   private router = inject(Router);
   private rolesService = inject(RolesService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   search: string = '';
   estadoFiltro: EstadoFiltro = 'TODOS';
@@ -32,6 +36,12 @@ export class RolesComponent implements OnInit {
   roles: Rol[] = [];
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarRoles();
   }
 

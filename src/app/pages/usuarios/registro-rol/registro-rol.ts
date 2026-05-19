@@ -11,6 +11,7 @@ import {
   GuardarRolRequest,
   CatalogoPermisos,
 } from '../../../../services/roles.service';
+import { LayoutService } from '../../../../services/layout.service';
 
 interface RolFormModel {
   id: number | null;
@@ -31,6 +32,9 @@ export class RegistroRolComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private rolesService = inject(RolesService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   isEditMode: boolean = false;
   submitted: boolean = false;
@@ -51,6 +55,12 @@ export class RegistroRolComponent implements OnInit {
   modulos: CatalogoPermisos[] = [];
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     const idParam = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!idParam;
 

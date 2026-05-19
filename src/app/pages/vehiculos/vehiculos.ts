@@ -6,6 +6,7 @@ import { Router, RouterModule } from '@angular/router';
 import { CabeceraComponent } from '../../components/cabecera/cabecera';
 import { FooterComponent } from '../../components/footer/footer';
 import { Vehiculo, VehiculosService } from '../../../services/vehiculos.service';
+import { LayoutService } from '../../../services/layout.service';
 
 type EstatusVehiculo = 'Asignado' | 'Disponible' | 'En taller' | 'Fuera de Servicio';
 
@@ -30,6 +31,9 @@ type EstadoFiltro = 'ACTIVOS' | 'INACTIVOS';
 export class VehiculosComponent implements OnInit {
   private router = inject(Router);
   private vehiculosService = inject(VehiculosService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   search = '';
   pageSize = 12;
@@ -42,6 +46,12 @@ export class VehiculosComponent implements OnInit {
   vehiculos: VehiculoCard[] = [];
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarVehiculos();
   }
 

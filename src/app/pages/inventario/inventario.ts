@@ -6,6 +6,7 @@ import { forkJoin } from 'rxjs';
 
 import { CabeceraComponent } from '../../components/cabecera/cabecera';
 import { FooterComponent } from '../../components/footer/footer';
+import { LayoutService } from '../../../services/layout.service';
 
 import {
   ArticulosInventarioService,
@@ -27,6 +28,9 @@ export class InventarioComponent implements OnInit {
   private entradasService = inject(EntradasInventarioService);
   private salidasService = inject(SalidasInventarioService);
   private router = inject(Router);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   items: ArticuloInventario[] = [];
   itemsFiltrados: ArticuloInventario[] = [];
@@ -49,6 +53,12 @@ export class InventarioComponent implements OnInit {
   kpiSalidas = 0;
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarDatos();
   }
 

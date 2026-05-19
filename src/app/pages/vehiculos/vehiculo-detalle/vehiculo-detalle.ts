@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
 import { Vehiculo, VehiculosService } from '../../../../services/vehiculos.service';
+import { LayoutService } from '../../../../services/layout.service';
 
 type StatusVehiculo = 'Asignado' | 'Disponible' | 'En taller' | 'Fuera de Servicio';
 
@@ -40,6 +41,9 @@ export class VehiculoDetalleComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private vehiculosService = inject(VehiculosService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   vehiculoId: number | null = null;
   vehiculo: VehiculoDetalle | null = null;
@@ -48,6 +52,12 @@ export class VehiculoDetalleComponent implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     const idParam = this.route.snapshot.paramMap.get('id');
     this.vehiculoId = idParam ? Number(idParam) : null;
 

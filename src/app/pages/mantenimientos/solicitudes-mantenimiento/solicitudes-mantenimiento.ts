@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import { LayoutService } from '../../../../services/layout.service';
 
 import {
   EstadoSolicitud,
@@ -36,6 +37,9 @@ type SolicitudMantenimientoView = {
 export class SolicitudesMantenimientoComponent implements OnInit {
   private router = inject(Router);
   private solicitudesService = inject(SolicitudesMantenimientoService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   solicitudes: SolicitudMantenimientoView[] = [];
   solicitudesFiltradas: SolicitudMantenimientoView[] = [];
@@ -53,6 +57,12 @@ export class SolicitudesMantenimientoComponent implements OnInit {
   successMessage = '';
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarSolicitudes();
   }
 

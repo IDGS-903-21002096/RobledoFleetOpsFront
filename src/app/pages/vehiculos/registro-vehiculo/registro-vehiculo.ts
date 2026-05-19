@@ -12,6 +12,7 @@ import {
   VehiculosService
 } from '../../../../services/vehiculos.service';
 import { TipoVehiculo, TiposVehiculoService } from '../../../../services/tipos-vehiculo.service';
+import { LayoutService } from '../../../../services/layout.service';
 
 type InicioEstadisticas = 'Fecha de registro' | 'Fecha de compra';
 type MedidaUso = 'Kilómetros' | 'Millas' | 'Horas';
@@ -36,6 +37,9 @@ export class RegistroVehiculoComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private vehiculosService = inject(VehiculosService);
   private tiposVehiculoService = inject(TiposVehiculoService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   isEditMode = false;
   loading = false;
@@ -113,6 +117,12 @@ export class RegistroVehiculoComponent implements OnInit {
   polizaTouched = false;
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     const idParam = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!idParam;
     this.cargarPantalla(idParam ? Number(idParam) : null);

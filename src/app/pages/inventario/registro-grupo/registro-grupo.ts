@@ -5,6 +5,8 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CabeceraComponent } from '../../../components/cabecera/cabecera';
 import { FooterComponent } from '../../../components/footer/footer';
+import { LayoutService } from '../../../../services/layout.service';
+
 import {
   GruposInventarioService
 } from '../../../../services/grupos-inventario.service';
@@ -20,6 +22,9 @@ export class RegistroGrupoComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private gruposInventarioService = inject(GruposInventarioService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   editId: number | null = null;
 
@@ -31,6 +36,12 @@ export class RegistroGrupoComponent implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     const idParam = this.route.snapshot.paramMap.get('id');
     this.editId = idParam ? Number(idParam) : null;
 

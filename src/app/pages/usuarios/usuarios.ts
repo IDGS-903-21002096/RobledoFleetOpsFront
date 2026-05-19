@@ -6,6 +6,7 @@ import { Router, RouterModule } from '@angular/router';
 import { CabeceraComponent } from '../../components/cabecera/cabecera';
 import { FooterComponent } from '../../components/footer/footer';
 import { Usuario, UsuariosService } from '../../../services/usuarios.service';
+import { LayoutService } from '../../../services/layout.service';
 
 type UsuarioCard = {
   id: number;
@@ -29,6 +30,9 @@ type EstadoFiltro = 'ACTIVOS' | 'INACTIVOS';
 export class UsuariosComponent implements OnInit {
   private router = inject(Router);
   private usuariosService = inject(UsuariosService);
+  private layoutService = inject(LayoutService);
+
+  sidebarCollapsed = false;
 
   search = '';
   pageSize = 12;
@@ -49,6 +53,12 @@ export class UsuariosComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarUsuarios();
   }
 

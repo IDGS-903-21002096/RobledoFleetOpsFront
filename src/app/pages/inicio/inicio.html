@@ -1,27 +1,31 @@
 <app-cabecera></app-cabecera>
 
-<main class="pt-20 min-h-screen bg-gray-50">
-  <div class="max-w-screen-xl mx-auto p-6">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">
+<main
+  class="min-h-screen bg-gray-50 pt-6 pb-10 transition-all duration-300"
+  [class.md:pl-72]="!sidebarCollapsed"
+  [class.md:pl-20]="sidebarCollapsed"
+>
+  <div class="w-full px-4 sm:px-6 lg:px-8">
+    <h1 class="mb-4 text-2xl font-bold text-gray-900">
       Bienvenido a Robledo FleetOps
     </h1>
 
-    <p class="text-gray-600 mb-8">
+    <p class="mb-8 text-gray-600">
       Panel principal del sistema. Aquí se mostrarán avisos, métricas y accesos rápidos.
     </p>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-      <div class="rounded-2xl bg-slate-900 p-6 shadow-lg border border-slate-800 text-white">
+    <div class="grid grid-cols-1 items-start gap-6 md:grid-cols-3">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-white shadow-lg">
         <div class="mb-5">
           <div>
-            <p class="text-sm text-slate-400 mb-1">Total mantenimientos</p>
+            <p class="mb-1 text-sm text-slate-400">Total mantenimientos</p>
             <h2 class="text-2xl font-bold text-red-400">
               ${{ totalMantenimientoSemana | number:'1.0-0' }}
             </h2>
           </div>
         </div>
 
-        <p class="text-slate-300 text-sm mb-4">
+        <p class="mb-4 text-sm text-slate-300">
           Gastos semanales en mantenimientos de unidades.
         </p>
 
@@ -48,8 +52,8 @@
           [markers]="maintenanceChartOptions.markers!"
         ></apx-chart>
 
-        <div class="grid grid-cols-1 items-center border-t border-slate-800 justify-between">
-          <div class="flex justify-between items-center pt-4 md:pt-6 gap-4">
+        <div class="grid grid-cols-1 items-center justify-between border-t border-slate-800">
+          <div class="flex items-center justify-between gap-4 pt-4 md:pt-6">
             <div class="flex items-center gap-3">
               <label for="semanaMantenimiento" class="text-sm font-medium text-slate-300">
                 Semana:
@@ -70,24 +74,24 @@
         </div>
       </div>
 
-      <div class="rounded-2xl bg-slate-900 p-6 shadow-lg border border-slate-800 text-white">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-white shadow-lg">
         <div class="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p class="text-sm text-slate-400 mb-1">Total entradas</p>
+            <p class="mb-1 text-sm text-slate-400">Total entradas</p>
             <h2 class="text-2xl font-bold text-emerald-400">
               ${{ totalEntradasSemana | number:'1.0-0' }}
             </h2>
           </div>
 
           <div class="text-right">
-            <p class="text-sm text-slate-400 mb-1">Total salidas</p>
+            <p class="mb-1 text-sm text-slate-400">Total salidas</p>
             <h2 class="text-2xl font-bold text-red-400">
               ${{ totalSalidasSemana | number:'1.0-0' }}
             </h2>
           </div>
         </div>
 
-        <p class="text-slate-300 text-sm mb-4">
+        <p class="mb-4 text-sm text-slate-300">
           Costos de entradas y salidas en inventario por semana.
         </p>
 
@@ -119,8 +123,8 @@
           [markers]="inventoryChartOptions.markers!"
         ></apx-chart>
 
-        <div class="grid grid-cols-1 items-center border-t border-slate-800 justify-between">
-          <div class="flex justify-between items-center pt-4 md:pt-6 gap-4">
+        <div class="grid grid-cols-1 items-center justify-between border-t border-slate-800">
+          <div class="flex items-center justify-between gap-4 pt-4 md:pt-6">
             <div class="flex items-center gap-3">
               <label for="semanaInventario" class="text-sm font-medium text-slate-300">
                 Semana:
@@ -141,19 +145,19 @@
         </div>
       </div>
 
-      <div class="rounded-2xl bg-slate-900 p-6 shadow-lg border border-slate-800 text-white">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-white shadow-lg">
         <div class="mb-4">
-          <h2 class="font-semibold text-white text-lg">Disponibilidad de flota</h2>
+          <h2 class="text-lg font-semibold text-white">Disponibilidad de flota</h2>
           <p class="text-sm text-slate-300">
             Visualización general del estado actual de las unidades.
           </p>
         </div>
 
-        <div class="rounded-2xl border border-slate-700 bg-slate-800/80 p-3 mb-4">
+        <div class="mb-4 rounded-2xl border border-slate-700 bg-slate-800/80 p-3">
           <div class="grid grid-cols-3 gap-3">
             <div class="rounded-xl border border-green-700 bg-green-900/30 p-3 text-center">
               <div
-                class="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-green-800 text-green-300 font-bold text-sm">
+                class="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-green-800 text-sm font-bold text-green-300">
                 {{ vehiculosDisponibles }}
               </div>
               <p class="text-sm font-semibold text-green-400">Disponible</p>
@@ -161,7 +165,7 @@
 
             <div class="rounded-xl border border-blue-700 bg-blue-900/30 p-3 text-center">
               <div
-                class="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-blue-800 text-blue-300 font-bold text-sm">
+                class="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-blue-800 text-sm font-bold text-blue-300">
                 {{ vehiculosEnUso }}
               </div>
               <p class="text-sm font-semibold text-blue-400">En uso</p>
@@ -169,7 +173,7 @@
 
             <div class="rounded-xl border border-orange-700 bg-orange-900/30 p-3 text-center">
               <div
-                class="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-orange-800 text-orange-300 font-bold text-sm">
+                class="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-orange-800 text-sm font-bold text-orange-300">
                 {{ vehiculosEnTaller }}
               </div>
               <p class="text-sm font-semibold text-orange-400">En taller</p>
@@ -213,7 +217,7 @@
       </div>
     </div>
 
-    <div class="mt-8 rounded-2xl bg-slate-900 shadow-lg border border-slate-800 text-white overflow-hidden">
+    <div class="mt-8 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 text-white shadow-lg">
       <div class="flex items-start justify-between gap-4 border-b border-slate-800 p-6">
         <div>
           <h2 class="text-lg font-semibold">Calendario de eventos</h2>

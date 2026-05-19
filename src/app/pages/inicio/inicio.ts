@@ -35,6 +35,7 @@ import { EntradasInventarioService, EntradaInventario } from '../../../services/
 import { SalidasInventarioService, SalidaInventario } from '../../../services/salidas-inventario.service';
 import { MantenimientosService } from '../../../services/mantenimientos.service';
 import { VehiculosDocumentosService } from '../../../services/vehiculos-documentos.service';
+import { LayoutService } from '../../../services/layout.service';
 
 export type FleetChartOptions = {
   series: ApexNonAxisChartSeries;
@@ -149,12 +150,14 @@ export class InicioComponent implements OnInit {
   private salidasService = inject(SalidasInventarioService);
   private mantenimientosService = inject(MantenimientosService);
   private vehiculosDocumentosService = inject(VehiculosDocumentosService);
+  private layoutService = inject(LayoutService);
 
   totalVehiculos = 0;
   vehiculosDisponibles = 0;
   vehiculosEnUso = 0;
   vehiculosEnTaller = 0;
 
+  sidebarCollapsed = false;
   calendarCollapsed = false;
   loading = false;
 
@@ -517,6 +520,12 @@ export class InicioComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.layoutService.loadSidebarState();
+
+    this.layoutService.sidebarCollapsed$.subscribe((collapsed) => {
+      this.sidebarCollapsed = collapsed;
+    });
+
     this.cargarDashboard();
   }
 
